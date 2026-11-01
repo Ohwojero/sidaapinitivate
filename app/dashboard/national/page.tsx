@@ -80,7 +80,8 @@ export default function NationalDirectorDashboard() {
     phone: '',
     state: 'Katsina',
     lga: '',
-    city: ''
+    city: '',
+    avatarUrl: ''
   })
 
   // Broadcast Directive Form State
@@ -112,7 +113,7 @@ export default function NationalDirectorDashboard() {
       staffCount: 0,
       facilitiesCount: 0,
       outreachCount: 0,
-      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80'
+      avatarUrl: newDirector.avatarUrl || undefined
     }
     setDirectors(prev => [created, ...prev])
 
@@ -140,7 +141,7 @@ export default function NationalDirectorDashboard() {
     })
 
     setShowAddDirectorModal(false)
-    setNewDirector({ name: '', email: '', password: 'sidaap2026', phone: '', state: 'Katsina', lga: '', city: '' })
+    setNewDirector({ name: '', email: '', password: 'sidaap2026', phone: '', state: 'Katsina', lga: '', city: '', avatarUrl: '' })
   }
 
   // Edit Director Handler
@@ -581,6 +582,29 @@ export default function NationalDirectorDashboard() {
               </div>
 
               <div>
+                <label className="block font-bold text-stone-700 mb-1">Profile Photo</label>
+                <div className="flex items-center gap-3">
+                  {newDirector.avatarUrl ? (
+                    <img src={newDirector.avatarUrl} alt="preview" className="h-14 w-14 rounded-xl object-cover ring-1 ring-stone-200 shrink-0" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-xl bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-400 text-xs shrink-0">Photo</div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = ev => setNewDirector(prev => ({ ...prev, avatarUrl: ev.target?.result as string }))
+                      reader.readAsDataURL(file)
+                    }}
+                    className="text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="block font-bold text-stone-700 mb-1">Director Full Legal Name</label>
                 <input
                   required
@@ -736,6 +760,28 @@ export default function NationalDirectorDashboard() {
               <button onClick={() => setEditingDirector(null)} className="rounded-full p-1.5 text-stone-400 hover:text-stone-700"><X className="h-5 w-5" /></button>
             </div>
             <form onSubmit={handleEditDirector} className="mt-4 space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Profile Photo</label>
+                <div className="flex items-center gap-3">
+                  {editingDirector.avatarUrl ? (
+                    <img src={editingDirector.avatarUrl} alt="preview" className="h-14 w-14 rounded-xl object-cover ring-1 ring-stone-200 shrink-0" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-xl bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-400 text-xs shrink-0">Photo</div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = ev => setEditingDirector(prev => prev ? { ...prev, avatarUrl: ev.target?.result as string } : prev)
+                      reader.readAsDataURL(file)
+                    }}
+                    className="text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Full Name</label>
                 <input required type="text" value={editingDirector.name}

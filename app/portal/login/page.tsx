@@ -9,7 +9,8 @@ import {
   Mail,
   ArrowRight,
   AlertCircle,
-  KeyRound
+  KeyRound,
+  X
 } from 'lucide-react'
 import {
   saveStoredUser,
@@ -72,11 +73,6 @@ export default function PortalLoginPage() {
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-[#c9ec63]/10 rounded-full blur-3xl pointer-events-none" />
 
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#c9ec63]/15 px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider text-[#c9ec63] border border-[#c9ec63]/30 mb-4">
-              <Lock className="h-3 w-3" />
-              <span>Role-Based Portal Access</span>
-            </div>
-
             <h1 className="text-2xl font-bold text-white tracking-tight">
               Sign In to Portal
             </h1>
@@ -87,7 +83,10 @@ export default function PortalLoginPage() {
             {errorMsg && (
               <div className="mt-4 p-3.5 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs flex items-start gap-2.5 animate-in fade-in">
                 <AlertCircle className="h-4 w-4 shrink-0 text-red-400 mt-0.5" />
-                <span className="leading-relaxed">{errorMsg}</span>
+                <span className="leading-relaxed flex-1">{errorMsg}</span>
+                <button onClick={() => setErrorMsg('')} className="shrink-0 text-red-400 hover:text-red-200 transition cursor-pointer">
+                  <X className="h-4 w-4" />
+                </button>
               </div>
             )}
 

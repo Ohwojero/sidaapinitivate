@@ -147,7 +147,6 @@ function ChatInner() {
       }
     }
   }, [rooms.length, targetRoomParam, targetStateParam])
-
   // Select a room: immediately clears unread count badge
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId)
@@ -191,6 +190,27 @@ function ChatInner() {
   // Global subscription across all rooms to update unread badge counts & delivery ticks
   useEffect(() => {
     const unsubscribeAll = subscribeToAllMessages((incomingMsg) => {
+      // Auto-create sidebar entry for state-specific public rooms from the widget
+      if (incomingMsg.roomId.startsWith('room-public-') && incomingMsg.roomId !== 'room-public-inquiries') {
+        setRooms((prev) => {
+          if (prev.find(r => r.id === incomingMsg.roomId)) return prev
+          const stateName = incomingMsg.senderName.match(/\(([^)]+)\)/)?.[1] || incomingMsg.roomId.replace('room-public-', '').replace(/-/g, ' ')
+          const newRoom: ChatRoom = {
+            id: incomingMsg.roomId,
+            name: `🌐 ${stateName} Public Inquiry`,
+            type: 'broadcast',
+            state: stateName,
+            description: `Live public inquiries from ${stateName}`,
+            unreadCount: 1,
+            lastMessage: `${incomingMsg.senderName}: ${incomingMsg.text}`,
+            lastTime: incomingMsg.timestamp,
+            avatarText: stateName.slice(0, 3).toUpperCase(),
+            avatarColor: 'bg-[#c9ec63] text-[#13231f]'
+          }
+          upsertChatRoom(newRoom)
+          return [newRoom, ...prev]
+        })
+      }
       if (incomingMsg.roomId === activeRoomId) {
         // Message is for currently open room
         setMessages((prev) => {
@@ -702,17 +722,18 @@ function ChatInner() {
               return (
                 <div
                   key={msg.id}
-                  className={`w-full flex ${isMine ? 'justify-end' : 'justify-start'} my-2 relative z-10`}
+                  className={`flex w-full ${isMine ? 'justify-end' : 'justify-start'} my-1 relative z-10`}
                 >
                   <div
-                    className={`max-w-[78%] sm:max-w-[72%] rounded-2xl px-4 py-2.5 shadow-md ${
+                    className={`max-w-[78%] sm:max-w-[65%] px-4 py-2.5 shadow-md text-xs leading-relaxed break-words ${
                       isMine
-                        ? 'bg-[#005c4b] text-white rounded-tr-none ml-auto border border-[#00a884]/20'
+                        ? 'bg-[#005c4b] text-white rounded-2xl rounded-tr-none border border-[#00a884]/20'
                         : isPublicCitizen
-                        ? 'bg-[#182823] text-stone-100 rounded-tl-none border border-[#c9ec63]/40 shadow-emerald-950/40 mr-auto'
-                        : 'bg-[#202c33] text-stone-100 rounded-tl-none border border-white/5 mr-auto'
+                        ? 'bg-[#182823] text-stone-100 rounded-2xl rounded-tl-none border border-[#c9ec63]/40'
+                        : 'bg-[#202c33] text-stone-100 rounded-2xl rounded-tl-none border border-white/5'
                     }`}
                   >
+                    {/* Sender label — only on received messages */}
                     {!isMine && (
                       <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <span className="text-[11px] font-bold text-[#c9ec63]">
@@ -725,16 +746,15 @@ function ChatInner() {
                               : 'bg-black/30 text-white/60'
                           }`}
                         >
-                          {isPublicCitizen ? '🌐 Live Public Lead' : msg.senderRole}
+                          {isPublicCitizen ? '🌐 Public Lead' : msg.senderRole}
                         </span>
                       </div>
                     )}
 
-                    <p className="text-xs leading-relaxed break-words whitespace-pre-wrap">
-                      {msg.text}
-                    </p>
+                    <p className="whitespace-pre-wrap">{msg.text}</p>
 
-                    <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-white/50 font-mono">
+                    {/* Timestamp + delivery ticks — always bottom-right */}
+                    <div className="mt-1.5 flex items-center justify-end gap-1 text-[10px] text-white/40 font-mono">
                       <span>{msg.timestamp}</span>
                       {isMine && (
                         msg.status === 'read' ? (

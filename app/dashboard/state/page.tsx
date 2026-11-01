@@ -85,7 +85,8 @@ export default function StateDirectorDashboard() {
     phone: '',
     lga: '',
     city: '',
-    roleTitle: 'Field Officer' as StateStaffMember['roleTitle']
+    roleTitle: 'Field Officer' as StateStaffMember['roleTitle'],
+    avatarUrl: ''
   })
 
   // Log Field Activity Form State
@@ -142,7 +143,7 @@ export default function StateDirectorDashboard() {
       joinedDate: 'Today',
       assignedDirector: `${directorName} (${activeState} State Director)`,
       status: 'active',
-      avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80'
+      avatarUrl: newStaff.avatarUrl || undefined
     }
     setStaffList(prev => [created, ...prev])
 
@@ -157,7 +158,7 @@ export default function StateDirectorDashboard() {
       city: created.city,
       title: created.roleTitle,
       avatarInitials: created.name.split(' ').map(n => n[0]).join('').slice(0, 2),
-      avatarUrl: created.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80'
+      avatarUrl: created.avatarUrl || undefined
     }
     addStaffMember(created, newUser)
 
@@ -171,7 +172,7 @@ export default function StateDirectorDashboard() {
     })
 
     setShowAddStaffModal(false)
-    setNewStaff({ name: '', email: '', password: 'sidaap2026', phone: '', lga: '', city: '', roleTitle: 'Field Officer' })
+    setNewStaff({ name: '', email: '', password: 'sidaap2026', phone: '', lga: '', city: '', roleTitle: 'Field Officer', avatarUrl: '' })
   }
 
   // Log Activity Handler
@@ -526,6 +527,28 @@ export default function StateDirectorDashboard() {
             </div>
             <form onSubmit={handleEditStaff} className="mt-4 space-y-3 text-xs">
               <div>
+                <label className="block font-bold text-stone-700 mb-1">Profile Photo</label>
+                <div className="flex items-center gap-3">
+                  {editingStaff.avatarUrl ? (
+                    <img src={editingStaff.avatarUrl} alt="preview" className="h-14 w-14 rounded-xl object-cover ring-1 ring-stone-200 shrink-0" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-xl bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-400 text-xs shrink-0">Photo</div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = ev => setEditingStaff(prev => prev ? { ...prev, avatarUrl: ev.target?.result as string } : prev)
+                      reader.readAsDataURL(file)
+                    }}
+                    className="text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+                  />
+                </div>
+              </div>
+              <div>
                 <label className="block font-bold text-stone-700 mb-1">Full Name</label>
                 <input required type="text" value={editingStaff.name}
                   onChange={e => setEditingStaff({ ...editingStaff, name: e.target.value })}
@@ -646,6 +669,28 @@ export default function StateDirectorDashboard() {
             </div>
 
             <form onSubmit={handleAddStaff} className="mt-4 space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Profile Photo</label>
+                <div className="flex items-center gap-3">
+                  {newStaff.avatarUrl ? (
+                    <img src={newStaff.avatarUrl} alt="preview" className="h-14 w-14 rounded-xl object-cover ring-1 ring-stone-200 shrink-0" />
+                  ) : (
+                    <div className="h-14 w-14 rounded-xl bg-stone-100 border border-stone-300 flex items-center justify-center text-stone-400 text-xs shrink-0">Photo</div>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (!file) return
+                      const reader = new FileReader()
+                      reader.onload = ev => setNewStaff(prev => ({ ...prev, avatarUrl: ev.target?.result as string }))
+                      reader.readAsDataURL(file)
+                    }}
+                    className="text-xs text-stone-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-stone-100 file:text-stone-700 hover:file:bg-stone-200 cursor-pointer"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Full Legal Name</label>
                 <input
