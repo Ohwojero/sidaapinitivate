@@ -16,8 +16,7 @@ import {
   subscribeToMessages,
   subscribeToAllMessages,
   broadcastUserTyping,
-  subscribeToTyping,
-  isCloudRealtimeActive
+  subscribeToTyping
 } from '@/lib/supabase/chat'
 import { getStoredUser, AuthUser } from '@/lib/auth/session'
 import {
@@ -53,6 +52,7 @@ function ChatInner() {
   const [inputMessage, setInputMessage] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'all' | 'groups' | 'direct'>('all')
+  const [mobileView, setMobileView] = useState<'list' | 'chat'>('list')
 
   // Track message IDs sent from this browser tab for guaranteed Right-side alignment
   const [mySentIds, setMySentIds] = useState<Set<string>>(() => {
@@ -64,9 +64,6 @@ function ChatInner() {
       return new Set()
     }
   })
-
-  // Cloud Realtime active status
-  const [isCloudActive, setIsCloudActive] = useState(false)
 
   // Typing indicator
   const [typingUsers, setTypingUsers] = useState<{ userId: string; userName: string }[]>([])
@@ -94,7 +91,6 @@ function ChatInner() {
 
   useEffect(() => {
     setCurrentUser(getStoredUser())
-    setIsCloudActive(isCloudRealtimeActive())
     reloadRooms()
   }, [reloadRooms])
 
@@ -150,6 +146,7 @@ function ChatInner() {
   // Select a room: immediately clears unread count badge
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId)
+    setMobileView('chat')
     setRooms((prev) =>
       prev.map((r) => (r.id === roomId ? { ...r, unreadCount: 0 } : r))
     )
@@ -190,21 +187,26 @@ function ChatInner() {
   // Global subscription across all rooms to update unread badge counts & delivery ticks
   useEffect(() => {
     const unsubscribeAll = subscribeToAllMessages((incomingMsg) => {
-      // Auto-create sidebar entry for state-specific public rooms from the widget
+      // Auto-create sidebar entry for visitor-specific public rooms from the widget
       if (incomingMsg.roomId.startsWith('room-public-') && incomingMsg.roomId !== 'room-public-inquiries') {
         setRooms((prev) => {
           if (prev.find(r => r.id === incomingMsg.roomId)) return prev
-          const stateName = incomingMsg.senderName.match(/\(([^)]+)\)/)?.[1] || incomingMsg.roomId.replace('room-public-', '').replace(/-/g, ' ')
+          // senderName format: "08012345678 (Lagos)"
+          const senderName = incomingMsg.senderName || ''
+          const phoneMatch = senderName.match(/^([\d\s]+)/)
+          const stateMatch = senderName.match(/\(([^)]+)\)/)
+          const visitorPhone = phoneMatch?.[1]?.trim() || 'Visitor'
+          const visitorState = stateMatch?.[1]?.trim() || 'Unknown State'
           const newRoom: ChatRoom = {
             id: incomingMsg.roomId,
-            name: `🌐 ${stateName} Public Inquiry`,
-            type: 'broadcast',
-            state: stateName,
-            description: `Live public inquiries from ${stateName}`,
+            name: `📱 ${visitorPhone} — ${visitorState}`,
+            type: 'direct',
+            state: visitorState,
+            description: `Public visitor • ${visitorPhone} • ${visitorState}`,
             unreadCount: 1,
-            lastMessage: `${incomingMsg.senderName}: ${incomingMsg.text}`,
+            lastMessage: incomingMsg.text,
             lastTime: incomingMsg.timestamp,
-            avatarText: stateName.slice(0, 3).toUpperCase(),
+            avatarText: visitorPhone.slice(-4),
             avatarColor: 'bg-[#c9ec63] text-[#13231f]'
           }
           upsertChatRoom(newRoom)
@@ -490,7 +492,7 @@ function ChatInner() {
         {/* ========================================================= */}
         {/* LEFT COLUMN: CHATS LIST (WhatsApp Style) */}
         {/* ========================================================= */}
-        <div className="w-full sm:w-80 md:w-96 bg-[#111e1b] border-r border-white/10 flex flex-col h-full shrink-0">
+        <div className={`${mobileView === 'chat' ? 'hidden' : 'flex'} sm:flex w-full sm:w-80 md:w-96 bg-[#111e1b] border-r border-white/10 flex-col h-full shrink-0`}>
           {/* Header */}
           <div className="h-16 px-4 bg-[#162723] border-b border-white/10 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -503,10 +505,6 @@ function ChatInner() {
                 </div>
                 <div>
                   <h2 className="text-xs font-bold uppercase tracking-wider text-white">SIDAAP Channels</h2>
-                  <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-mono">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    {isCloudActive ? 'Supabase Realtime Cloud' : 'Live WebSockets'}
-                  </span>
                 </div>
               </div>
             </div>
@@ -626,12 +624,18 @@ function ChatInner() {
         {/* ========================================================= */}
         {/* RIGHT COLUMN: ACTIVE CONVERSATION (WhatsApp Style) */}
         {/* ========================================================= */}
-        <div className="hidden sm:flex flex-1 flex-col h-full bg-[#0d1815] relative">
+        <div className={`${mobileView === 'list' ? 'hidden' : 'flex'} sm:flex flex-1 flex-col h-full bg-[#0d1815] relative`}>
           {/* Active Conversation Header */}
-          <div className="h-16 px-6 bg-[#162723] border-b border-white/10 flex items-center justify-between z-10 shadow-sm">
-            <div className="flex items-center gap-3">
+          <div className="h-16 px-3 sm:px-6 bg-[#162723] border-b border-white/10 flex items-center justify-between z-10 shadow-sm">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button
+                onClick={() => setMobileView('list')}
+                className="sm:hidden p-1.5 rounded-lg hover:bg-white/10 text-[#c9ec63] shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </button>
               <div
-                className={`h-10 w-10 rounded-full ${activeRoom.avatarColor} text-white flex items-center justify-center font-bold text-xs shadow`}
+                className={`h-9 w-9 sm:h-10 sm:w-10 rounded-full ${activeRoom.avatarColor} text-white flex items-center justify-center font-bold text-xs shadow shrink-0`}
               >
                 {activeRoom.avatarText}
               </div>

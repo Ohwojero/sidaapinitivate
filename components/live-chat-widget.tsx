@@ -22,17 +22,19 @@ const V_STATE_KEY = 'sidaap_visitor_state'
 const V_SEEN_KEY  = 'sidaap_visitor_last_seen'
 
 function getOrCreateId(phone: string): string {
-  let id = localStorage.getItem(V_ID_KEY)
+  const key = `${V_ID_KEY}_${phone.replace(/[^0-9]/g, '').slice(-10)}`
+  let id = localStorage.getItem(key)
   if (!id) {
-    id = `visitor-${phone}-${Date.now()}`
-    localStorage.setItem(V_ID_KEY, id)
+    id = `visitor-${phone.replace(/[^0-9]/g, '').slice(-10)}-${Date.now()}`
+    localStorage.setItem(key, id)
   }
   return id
 }
 
-function getRoomId(state: string) {
-  const slug = state.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-  return `room-public-${slug}`
+function getRoomId(state: string, phone: string) {
+  const stateSlug = state.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+  const phoneSlug = phone.replace(/[^0-9]/g, '').slice(-10)
+  return `room-public-${stateSlug}-${phoneSlug}`
 }
 
 export function LiveChatWidget() {
@@ -62,7 +64,7 @@ export function LiveChatWidget() {
     }
   }, [])
 
-  const roomId = getRoomId(state)
+  const roomId = getRoomId(state, phone)
 
   const loadMessages = () => {
     if (isSendingRef.current) return
@@ -220,7 +222,6 @@ export function LiveChatWidget() {
               {registered && (
                 <button
                   onClick={() => {
-                    localStorage.removeItem(V_ID_KEY)
                     localStorage.removeItem(V_PHONE_KEY)
                     localStorage.removeItem(V_STATE_KEY)
                     localStorage.removeItem(V_SEEN_KEY)
