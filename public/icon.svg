@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Dark green background -->
+  <rect width="64" height="64" rx="14" fill="#13231f"/>
+
+  <!-- Lime accent bar (top) -->
+  <rect x="12" y="10" width="40" height="5" rx="2.5" fill="#c9ec63"/>
+
+  <!-- Bold "S" lettermark -->
+  <text
+    x="32"
+    y="48"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="34"
+    font-weight="bold"
+    fill="#c9ec63"
+    text-anchor="middle"
+  >S</text>
+
+  <!-- Small lime dot (bottom accent) -->
+  <circle cx="50" cy="52" r="3.5" fill="#c9ec63" opacity="0.6"/>
+</svg>
