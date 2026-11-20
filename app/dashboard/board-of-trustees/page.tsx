@@ -1,11 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Pencil, Plus, X } from 'lucide-react'
+import { Pencil, Plus, Trash2, X } from 'lucide-react'
 import {
   getStoredLeadership,
   fetchStoredLeadership,
   LeadershipMember,
+  deleteStoredLeadership,
   saveStoredLeadership,
 } from '@/lib/data/leadership-data'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
@@ -14,6 +15,7 @@ export default function BoardOfTrusteesPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
   const [editingLeader, setEditingLeader] = useState<LeadershipMember | null>(null)
   const [isAddingLeader, setIsAddingLeader] = useState(false)
+  const [deletingLeaderId, setDeletingLeaderId] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
@@ -62,6 +64,23 @@ export default function BoardOfTrusteesPage() {
     })
   }
 
+  const deleteLeader = async (leader: LeadershipMember) => {
+    if (!window.confirm(`Delete ${leader.name} from the board? This cannot be undone.`)) return
+    setDeletingLeaderId(leader.id)
+    try {
+      setLeadership(await deleteStoredLeadership(leader.id))
+      setNotice(
+        isSupabaseConfigured()
+          ? 'Trustee deleted from the database.'
+          : 'Trustee deleted from this device only.',
+      )
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not delete this trustee.')
+    } finally {
+      setDeletingLeaderId(null)
+    }
+  }
+
   return (
     <div className="min-h-full bg-[#f4f6f3] p-4 text-[#18312a] sm:p-6 lg:p-8">
       {notice && (
@@ -106,17 +125,29 @@ export default function BoardOfTrusteesPage() {
                 <h2 className="text-lg font-bold">{leader.name}</h2>
                 <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-[#52720e]">{leader.role}</p>
                 <p className="mt-3 min-h-12 text-sm leading-6 text-[#718079]">{leader.description}</p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddingLeader(false)
-                    setEditingLeader({ ...leader })
-                  }}
-                  className="mt-4 flex items-center gap-2 rounded-lg border border-[#18312a]/15 px-3 py-2 text-xs font-bold hover:border-[#18312a]"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Edit profile
-                </button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAddingLeader(false)
+                      setEditingLeader({ ...leader })
+                    }}
+                    className="flex items-center gap-2 rounded-lg border border-[#18312a]/15 px-3 py-2 text-xs font-bold hover:border-[#18312a]"
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                    Edit profile
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => deleteLeader(leader)}
+                    disabled={deletingLeaderId === leader.id}
+                    className="flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:border-red-400 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label={`Delete ${leader.name}`}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    {deletingLeaderId === leader.id ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
               </div>
             </article>
           ))}

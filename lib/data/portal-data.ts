@@ -222,98 +222,7 @@ export const INITIAL_STATE_ACTIVITIES: StateActivity[] = [
   }
 ]
 
-export const INITIAL_STATE_DIRECTORS: StateDirector[] = [
-  {
-    id: 'dir-fct',
-    name: 'Dr. Friday Chalele',
-    email: 'chalele@sidaap.org',
-    phone: '0806 343 0562',
-    state: 'Abuja (FCT)',
-    lga: 'Municipal Area Council (AMAC)',
-    city: 'Wuse II, Abuja',
-    appointedDate: 'April 2025',
-    status: 'active',
-    staffCount: 38,
-    facilitiesCount: 12,
-    outreachCount: 45,
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'dir-lagos',
-    name: 'Engr. Babatunde Sanusi',
-    email: 'lagos.dir@sidaap.org',
-    phone: '0802 853 1259',
-    state: 'Lagos',
-    lga: 'Ikeja',
-    city: 'Ikeja',
-    appointedDate: 'May 2025',
-    status: 'active',
-    staffCount: 64,
-    facilitiesCount: 22,
-    outreachCount: 82,
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'dir-delta',
-    name: 'Prosper Ohwojero',
-    email: 'prosper@sidaap.org',
-    phone: '0703 092 4398',
-    state: 'Delta',
-    lga: 'Warri South',
-    city: 'Warri',
-    appointedDate: 'June 2025',
-    status: 'active',
-    staffCount: 42,
-    facilitiesCount: 9,
-    outreachCount: 54,
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'dir-kano',
-    name: 'Mallam Ibrahim Danbatta',
-    email: 'kano.dir@sidaap.org',
-    phone: '0803 111 2233',
-    state: 'Kano',
-    lga: 'Kano Municipal',
-    city: 'Kano Central',
-    appointedDate: 'July 2025',
-    status: 'active',
-    staffCount: 31,
-    facilitiesCount: 8,
-    outreachCount: 39,
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'dir-rivers',
-    name: 'Dr. (Mrs) Ngozi Amadi',
-    email: 'rivers.dir@sidaap.org',
-    phone: '0804 555 7788',
-    state: 'Rivers',
-    lga: 'Port Harcourt',
-    city: 'Port Harcourt',
-    appointedDate: 'August 2025',
-    status: 'active',
-    staffCount: 29,
-    facilitiesCount: 7,
-    outreachCount: 33,
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'dir-oyo',
-    name: 'Chief Oladimeji Adeleke',
-    email: 'oyo.dir@sidaap.org',
-    phone: '0805 444 3322',
-    state: 'Oyo',
-    lga: 'Ibadan North',
-    city: 'Ibadan',
-    appointedDate: 'September 2025',
-    status: 'active',
-    staffCount: 27,
-    facilitiesCount: 6,
-    outreachCount: 28,
-    avatarUrl: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=256&h=256&q=80'
-  }
-]
+export const INITIAL_STATE_DIRECTORS: StateDirector[] = []
 
 export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
   {
@@ -489,6 +398,14 @@ export const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {}
 const DIRECTORS_KEY = 'sidaap_state_directors'
 const STAFF_KEY = 'sidaap_state_staff'
 const ACTIVITIES_KEY = 'sidaap_state_activities'
+const LEGACY_SAMPLE_DIRECTOR_IDS = new Set([
+  'dir-fct',
+  'dir-lagos',
+  'dir-delta',
+  'dir-kano',
+  'dir-rivers',
+  'dir-oyo',
+])
 
 export function getStoredDirectors(): StateDirector[] {
   if (typeof window === 'undefined') return INITIAL_STATE_DIRECTORS
@@ -496,17 +413,13 @@ export function getStoredDirectors(): StateDirector[] {
     const raw = localStorage.getItem(DIRECTORS_KEY)
     if (raw) {
       const parsed: StateDirector[] = JSON.parse(raw)
-      const existingIds = new Set(parsed.map(d => d.id))
-      const missing = INITIAL_STATE_DIRECTORS.filter(d => !existingIds.has(d.id))
-      if (missing.length > 0) {
-        const merged = [...parsed, ...missing]
-        localStorage.setItem(DIRECTORS_KEY, JSON.stringify(merged))
-        return merged
+      const current = parsed.filter(director => !LEGACY_SAMPLE_DIRECTOR_IDS.has(director.id))
+      if (current.length !== parsed.length) {
+        localStorage.setItem(DIRECTORS_KEY, JSON.stringify(current))
       }
-      return parsed
-    } else {
-      localStorage.setItem(DIRECTORS_KEY, JSON.stringify(INITIAL_STATE_DIRECTORS))
+      return current
     }
+    localStorage.setItem(DIRECTORS_KEY, JSON.stringify(INITIAL_STATE_DIRECTORS))
   } catch (err) {
     console.error('Failed to get stored directors', err)
   }

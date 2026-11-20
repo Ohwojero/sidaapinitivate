@@ -200,7 +200,7 @@ export default function NationalDirectorDashboard() {
       city: created.city,
       title: `${created.state} State Director`,
       avatarInitials: created.name.split(' ').map(n => n[0]).join('').slice(0, 2),
-      avatarUrl: created.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80'
+      avatarUrl: created.avatarUrl || ''
     }
 
     try {
@@ -809,7 +809,13 @@ export default function NationalDirectorDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 text-stone-700">
-                {filteredDirectors.map((d) => (
+                {filteredDirectors.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-sm text-stone-500">
+                      No state directors have been appointed yet.
+                    </td>
+                  </tr>
+                ) : filteredDirectors.map((d) => (
                   <tr key={d.id} className="hover:bg-stone-50/80 transition">
                     <td className="py-4 px-4 font-bold text-stone-900">
                       <div className="flex items-center gap-3">

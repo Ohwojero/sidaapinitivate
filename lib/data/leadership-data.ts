@@ -100,6 +100,22 @@ export async function saveStoredLeadership(member: LeadershipMember): Promise<Le
   return updated
 }
 
+export async function deleteStoredLeadership(id: string): Promise<LeadershipMember[]> {
+  const supabase = createClient()
+  if (supabase) {
+    const { error } = await supabase.from('leadership').delete().eq('id', id)
+    if (error) {
+      console.error('[sidaap:leadership] delete failed', error)
+      throw new Error('Could not delete this trustee from the database.')
+    }
+  }
+
+  const updated = getStoredLeadership().filter((member) => member.id !== id)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  window.dispatchEvent(new Event('sidaap_leadership_updated'))
+  return updated
+}
+
 export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
   const fallback = getStoredLeadership()
   const supabase = createClient()
