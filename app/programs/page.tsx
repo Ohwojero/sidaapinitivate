@@ -102,61 +102,62 @@ export default function ProgramsPage() {
       </section>
 
       {/* ── FILTER & CONTROLS ── */}
-      <section className="sticky top-0 z-30 bg-[#f7f5f0]/95 backdrop-blur-md border-b border-stone-200 py-4 px-6 lg:px-12 shadow-sm">
-        <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+      <section className="z-30 border-b border-stone-200 bg-[#f7f5f0]/95 px-4 py-3 shadow-sm sm:px-6 sm:py-4 md:sticky md:top-0 lg:px-12">
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-3 lg:flex lg:items-center lg:justify-between lg:gap-4">
           {/* Timing Filter Tabs */}
-          <div className="flex items-center gap-2 bg-stone-200/70 p-1.5 rounded-2xl shrink-0">
+          <div className="grid w-full grid-cols-3 gap-1 rounded-2xl bg-stone-200/70 p-1 sm:gap-1.5 sm:p-1.5 lg:w-auto lg:shrink-0 lg:gap-2">
             <button
               onClick={() => setTabFilter('all')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-bold uppercase leading-tight tracking-wide transition sm:flex-row sm:gap-1.5 sm:px-2 sm:text-xs md:px-4 md:tracking-wider ${
                 tabFilter === 'all'
                   ? 'bg-[#13231f] text-white shadow'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              All Activities ({programs.length})
+              <span className="text-center">All Activities</span>
+              <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">{programs.length}</span>
             </button>
             <button
               onClick={() => setTabFilter('past')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 ${
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-bold uppercase leading-tight tracking-wide transition sm:flex-row sm:gap-1.5 sm:px-2 sm:text-xs md:px-4 md:tracking-wider ${
                 tabFilter === 'past'
                   ? 'bg-emerald-700 text-white shadow'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              <span>Past Programs</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">{pastCount}</span>
+              <span className="text-center">Past Programs</span>
+              <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">{pastCount}</span>
             </button>
             <button
               onClick={() => setTabFilter('upcoming')}
-              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 ${
+              className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1.5 py-2 text-[10px] font-bold uppercase leading-tight tracking-wide transition sm:flex-row sm:gap-1.5 sm:px-2 sm:text-xs md:px-4 md:tracking-wider ${
                 tabFilter === 'upcoming'
                   ? 'bg-amber-600 text-white shadow'
                   : 'text-stone-600 hover:text-stone-900'
               }`}
             >
-              <span>Upcoming Programs</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">{upcomingCount}</span>
+              <span className="text-center">Upcoming Programs</span>
+              <span className="rounded-full bg-white/20 px-1.5 py-0.5 text-[10px]">{upcomingCount}</span>
             </button>
           </div>
 
           {/* Search Box & Category Filter */}
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
+          <div className="grid w-full min-w-0 grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,180px)] lg:w-auto lg:min-w-[460px] lg:grid-cols-[minmax(0,1fr)_150px]">
+            <div className="relative min-w-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400" />
               <input
                 type="text"
                 placeholder="Search programs, state, keywords..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-white text-xs pl-9 pr-3 py-2 rounded-xl border border-stone-300 outline-none focus:border-[#13231f]"
+                className="w-full min-w-0 rounded-xl border border-stone-300 bg-white py-2 pl-9 pr-3 text-xs outline-none focus:border-[#13231f]"
               />
             </div>
 
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="bg-white text-xs px-3 py-2 rounded-xl border border-stone-300 outline-none focus:border-[#13231f]"
+              className="w-full min-w-0 rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#13231f]"
             >
               <option value="all">All Categories</option>
               {categories.map((cat) => (
