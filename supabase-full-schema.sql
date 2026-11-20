@@ -237,6 +237,10 @@ alter table public.chat_messages       enable row level security;
 alter table public.leadership          enable row level security;
 alter table public.program_activities  enable row level security;
 
+grant select, insert, update, delete
+  on table public.users, public.state_directors, public.state_staff, public.state_activities, public.national_directives, public.chat_rooms, public.chat_messages, public.leadership, public.program_activities
+  to anon, authenticated;
+
 -- users
 create policy "Anyone can read users"        on public.users for select using (true);
 create policy "Anyone can insert users"      on public.users for insert with check (true);

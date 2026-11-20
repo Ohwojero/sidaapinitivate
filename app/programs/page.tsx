@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
@@ -204,11 +204,18 @@ export default function ProgramsPage() {
                 >
                   {/* Photo Container */}
                   <div className="relative h-56 w-full bg-stone-900 overflow-hidden">
-                    <img
-                      src={item.mainImage}
-                      alt={item.title}
-                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    {item.mainImage ? (
+                      <img
+                        src={item.mainImage}
+                        alt={item.title}
+                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="flex h-full flex-col items-center justify-center gap-2 text-white/60">
+                        <ImageIcon className="h-8 w-8" />
+                        <span className="text-xs">No program photo</span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
 
                     {/* Timing Status Pill */}
@@ -333,11 +340,18 @@ export default function ProgramsPage() {
                   return (
                     <div className="space-y-3">
                       <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden bg-black shadow-inner">
-                        <img
-                          src={activePhoto}
-                          alt={selectedProgram.title}
-                          className="h-full w-full object-cover"
-                        />
+                        {activePhoto ? (
+                          <img
+                            src={activePhoto}
+                            alt={selectedProgram.title}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-3 text-white/60">
+                            <ImageIcon className="h-10 w-10" />
+                            <span className="text-sm">No program photos uploaded</span>
+                          </div>
+                        )}
                       </div>
 
                       {allPhotos.length > 1 && (

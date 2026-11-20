@@ -36,6 +36,10 @@ create index if not exists program_activities_status_idx
 alter table public.leadership enable row level security;
 alter table public.program_activities enable row level security;
 
+grant select, insert, update, delete
+  on table public.leadership, public.program_activities
+  to anon, authenticated;
+
 do $$
 begin
   if not exists (
@@ -132,3 +136,7 @@ where id in (
   'prog-fct-summit-upcoming',
   'prog-lagos-football-tourney'
 );
+
+update public.program_activities
+set main_image = null
+where main_image like '%photo-1577896851231%';

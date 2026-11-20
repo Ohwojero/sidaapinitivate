@@ -327,23 +327,23 @@ export async function addActivity(activity: StateActivity): Promise<void> {
 
   const supabase = createClient()
   if (!supabase) return
-  try {
-    await supabase.from('state_activities').insert({
-      id: activity.id,
-      title: activity.title,
-      state: activity.state,
-      lga: activity.lga,
-      city: activity.city || null,
-      category: activity.category,
-      date: activity.date,
-      reported_by: activity.reportedBy,
-      students_reached: activity.studentsReached ?? null,
-      books_distributed: activity.booksDistributed ?? null,
-      status: activity.status,
-      notes: activity.notes || null
-    })
-  } catch (err) {
-    console.error('[sidaap:portal] addActivity error', err)
+  const { error } = await supabase.from('state_activities').insert({
+    id: activity.id,
+    title: activity.title,
+    state: activity.state,
+    lga: activity.lga,
+    city: activity.city || null,
+    category: activity.category,
+    date: activity.date,
+    reported_by: activity.reportedBy,
+    students_reached: activity.studentsReached ?? null,
+    books_distributed: activity.booksDistributed ?? null,
+    status: activity.status,
+    notes: activity.notes || null
+  })
+  if (error) {
+    console.error('[sidaap:portal] addActivity error', error)
+    throw new Error(`Failed to save activity to database: ${error.message}`)
   }
 }
 
@@ -377,17 +377,17 @@ export async function fetchDirectives(): Promise<NationalDirective[]> {
 export async function addDirective(directive: NationalDirective): Promise<void> {
   const supabase = createClient()
   if (!supabase) return
-  try {
-    await supabase.from('national_directives').insert({
-      id: directive.id,
-      title: directive.title,
-      issued_by: directive.issuedBy,
-      priority: directive.priority,
-      content: directive.content,
-      target_scope: directive.targetScope,
-      upcoming_event_date: directive.upcomingEventDate || null
-    })
-  } catch (err) {
-    console.error('[sidaap:portal] addDirective error', err)
+  const { error } = await supabase.from('national_directives').insert({
+    id: directive.id,
+    title: directive.title,
+    issued_by: directive.issuedBy,
+    priority: directive.priority,
+    content: directive.content,
+    target_scope: directive.targetScope,
+    upcoming_event_date: directive.upcomingEventDate || null
+  })
+  if (error) {
+    console.error('[sidaap:portal] addDirective error', error)
+    throw new Error(`Failed to broadcast directive to database: ${error.message}`)
   }
 }

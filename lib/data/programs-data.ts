@@ -18,7 +18,19 @@ export interface ProgramActivity {
   createdAt: string
 }
 
+export const PROGRAM_CATEGORIES = [
+  'School Outreach',
+  'Youth Sports & Academy',
+  'Community Rally',
+  'Rehabilitation & Clinical Care',
+  'Workshop & Training',
+  'National Summit',
+  'Grassroots Awareness',
+]
+
 const STORAGE_KEY = 'sidaap_programs_activities_v1'
+const DEFAULT_SAMPLE_IMAGE =
+  'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1200&q=80'
 const REMOVED_SAMPLE_PROGRAM_IDS = new Set([
   'prog-exercise-books-fct',
   'prog-football-academy-unveiling',
@@ -34,17 +46,20 @@ export function getStoredPrograms(): ProgramActivity[] {
     if (!raw) return []
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
-    const programs = parsed.filter(
-      (program): program is ProgramActivity =>
-        Boolean(program) &&
-        typeof program === 'object' &&
-        'id' in program &&
-        typeof program.id === 'string' &&
-        !REMOVED_SAMPLE_PROGRAM_IDS.has(program.id),
-    )
-    if (programs.length !== parsed.length) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(programs))
-    }
+    const programs = (parsed as unknown[])
+      .filter(
+        (program): program is ProgramActivity =>
+          Boolean(program) &&
+          program !== null &&
+          typeof program === 'object' &&
+          'id' in program &&
+          typeof (program as any).id === 'string' &&
+          !REMOVED_SAMPLE_PROGRAM_IDS.has((program as any).id),
+      )
+      .map((program) => ({
+        ...program,
+        mainImage: program.mainImage === DEFAULT_SAMPLE_IMAGE ? '' : program.mainImage ?? '',
+      }))
     return programs
   } catch {
     return []
@@ -52,61 +67,77 @@ export function getStoredPrograms(): ProgramActivity[] {
 }
 
 export async function saveStoredProgram(program: ProgramActivity): Promise<ProgramActivity[]> {
-  if (typeof window === 'undefined') return []
-  const current = getStoredPrograms()
-  const index = current.findIndex(p => p.id === program.id)
-  let updated: ProgramActivity[]
-
-  if (index >= 0) {
-    updated = [...current]
-    updated[index] = program
-  } else {
-    updated = [program, ...current]
-  }
-
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-  window.dispatchEvent(new Event('sidaap_programs_updated'))
-
   const supabase = createClient()
   if (supabase) {
-    const { error } = await supabase.from('program_activities').upsert({
-      id: program.id,
-      title: program.title,
-      status: program.status,
-      date: program.date,
-      category: program.category,
-      state: program.state,
-      location: program.location,
-      description: program.description,
-      main_image: program.mainImage,
-      gallery_images: program.galleryImages ?? [],
-      highlights: program.highlights ?? [],
-      organizer: program.organizer ?? null,
-      created_at: program.createdAt,
-    }, { onConflict: 'id' })
+    const { error } = await supabase.from('program_activities').upsert(
+      {
+        id: program.id,
+        title: program.title,
+        status: program.status,
+        date: program.date,
+        category: program.category,
+        state: program.state,
+        location: program.location,
+        description: program.description,
+        main_image: program.mainImage || null,
+        gallery_images: program.galleryImages ?? [],
+        highlights: program.highlights ?? [],
+        organizer: program.organizer ?? null,
+        created_at: program.createdAt,
+      },
+      { onConflict: 'id' },
+    )
     if (error) {
-      console.error('[sidaap:programs] save failed', error)
-      throw new Error('The program was saved on this device, but Supabase rejected the database update.')
+      console.error('[sidaap:programs] save failed in Supabase', error)
+      throw new Error(`Database save failed (${error.code || 'ERR'}): ${error.message}`)
     }
   }
-  return updated
+
+  if (typeof window !== 'undefined') {
+    const current = getStoredPrograms()
+    const index = current.findIndex((p) => p.id === program.id)
+    let updated: ProgramActivity[]
+
+    if (index >= 0) {
+      updated = [...current]
+      updated[index] = program
+    } else {
+      updated = [program, ...current]
+    }
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch (e) {
+      console.warn('[sidaap:programs] localStorage quota exceeded, skipping local cache write', e)
+    }
+    window.dispatchEvent(new Event('sidaap_programs_updated'))
+    return updated
+  }
+  return [program]
 }
 
 export async function deleteStoredProgram(id: string): Promise<ProgramActivity[]> {
-  if (typeof window === 'undefined') return []
-  const current = getStoredPrograms()
-  const updated = current.filter(p => p.id !== id)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-  window.dispatchEvent(new Event('sidaap_programs_updated'))
   const supabase = createClient()
   if (supabase) {
     const { error } = await supabase.from('program_activities').delete().eq('id', id)
     if (error) {
       console.error('[sidaap:programs] delete failed', error)
-      throw new Error('The program was removed on this device, but Supabase rejected the database deletion.')
+      throw new Error(`Database deletion failed (${error.code || 'ERR'}): ${error.message}`)
     }
   }
-  return updated
+
+  if (typeof window !== 'undefined') {
+    const current = getStoredPrograms()
+    const updated = current.filter((p) => p.id !== id)
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+    } catch (e) {
+      console.warn('[sidaap:programs] localStorage update failed on delete', e)
+    }
+    window.dispatchEvent(new Event('sidaap_programs_updated'))
+    return updated
+  }
+  return []
 }
 
 export async function fetchStoredPrograms(): Promise<ProgramActivity[]> {
@@ -119,10 +150,11 @@ export async function fetchStoredPrograms(): Promise<ProgramActivity[]> {
       .select('*')
       .order('created_at', { ascending: false })
     if (error) {
-      console.error('[sidaap:programs] fetch failed', error)
+      console.error('[sidaap:programs] fetch failed from Supabase', error)
       return fallback
     }
     if (!data) return fallback
+
     const programs: ProgramActivity[] = data
       .filter((item: any) => !REMOVED_SAMPLE_PROGRAM_IDS.has(item.id))
       .map((item: any): ProgramActivity => ({
@@ -134,17 +166,24 @@ export async function fetchStoredPrograms(): Promise<ProgramActivity[]> {
         state: item.state,
         location: item.location,
         description: item.description,
-        mainImage: item.main_image,
+        mainImage: item.main_image === DEFAULT_SAMPLE_IMAGE ? '' : item.main_image ?? '',
         galleryImages: item.gallery_images ?? [],
         highlights: item.highlights ?? [],
         organizer: item.organizer ?? undefined,
         createdAt: item.created_at,
       }))
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(programs))
-    window.dispatchEvent(new Event('sidaap_programs_updated'))
+
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(programs))
+      } catch (e) {
+        console.warn('[sidaap:programs] localStorage write skipped in fetch', e)
+      }
+      window.dispatchEvent(new Event('sidaap_programs_updated'))
+    }
     return programs
   } catch (error) {
-    console.error('[sidaap:programs] fetch failed', error)
+    console.error('[sidaap:programs] fetch error', error)
   }
   return fallback
 }

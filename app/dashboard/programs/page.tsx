@@ -23,20 +23,14 @@ import {
   fetchStoredPrograms,
   saveStoredProgram,
   ProgramActivity,
+  PROGRAM_CATEGORIES,
 } from '@/lib/data/programs-data'
 import { NIGERIA_STATES } from '@/lib/data/nigeria-data'
 import { AuthUser, getStoredUser } from '@/lib/auth/session'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { compressImageFile } from '@/lib/utils'
 
-const CATEGORIES = [
-  'School Outreach',
-  'Youth Sports & Academy',
-  'Community Rally',
-  'Rehabilitation & Clinical Care',
-  'Workshop & Training',
-  'National Summit',
-  'Grassroots Awareness',
-]
+const CATEGORIES = PROGRAM_CATEGORIES
 
 export default function AdminProgramsPage() {
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
@@ -47,6 +41,8 @@ export default function AdminProgramsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [notice, setNotice] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isCompressing, setIsCompressing] = useState(false)
 
   const [title, setTitle] = useState('')
   const [status, setStatus] = useState<'past' | 'upcoming'>('past')
@@ -75,9 +71,9 @@ export default function AdminProgramsPage() {
     return () => window.removeEventListener('sidaap_programs_updated', refresh)
   }, [])
 
-  const notify = (message: string) => {
+  const notify = (message: string, duration = 3500) => {
     setNotice(message)
-    window.setTimeout(() => setNotice(''), 3500)
+    window.setTimeout(() => setNotice(''), duration)
   }
 
   const resetForm = () => {
@@ -120,16 +116,36 @@ export default function AdminProgramsPage() {
     setModalOpen(true)
   }
 
-  const readImage = (file: File, limitMb: number, onResult: (value: string) => void) => {
-    if (file.size > limitMb * 1024 * 1024) {
-      notify(`Please use an image under ${limitMb}MB`)
-      return
+  const handleMainFileSelect = async (file: File) => {
+    setIsCompressing(true)
+    try {
+      const compressed = await compressImageFile(file, 1280, 960, 0.78)
+      setMainImage(compressed)
+      notify('Photo uploaded and optimized for web')
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Could not process photo')
+    } finally {
+      setIsCompressing(false)
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      if (typeof reader.result === 'string') onResult(reader.result)
+  }
+
+  const handleGallerySelect = async (files: FileList | null) => {
+    if (!files || files.length === 0) return
+    setIsCompressing(true)
+    try {
+      const fileArr = Array.from(files)
+      const compressedList: string[] = []
+      for (const f of fileArr) {
+        const c = await compressImageFile(f, 1024, 768, 0.75)
+        compressedList.push(c)
+      }
+      setGallery((prev) => [...prev, ...compressedList])
+      notify(`Added ${compressedList.length} photos`)
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Could not process some photos')
+    } finally {
+      setIsCompressing(false)
     }
-    reader.readAsDataURL(file)
   }
 
   const saveProgram = async (event: React.FormEvent) => {
@@ -145,6 +161,7 @@ export default function AdminProgramsPage() {
       return
     }
 
+    setIsSaving(true)
     const existing = editingId ? programs.find((item) => item.id === editingId) : undefined
     const program: ProgramActivity = {
       id: editingId || `prog-${Date.now()}`,
@@ -155,9 +172,7 @@ export default function AdminProgramsPage() {
       state: programState,
       location: location.trim() || `${programState}, Nigeria`,
       description: description.trim(),
-      mainImage:
-        mainImage ||
-        'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1200&q=80',
+      mainImage,
       galleryImages: gallery,
       highlights: highlights
         .split('\n')
@@ -176,7 +191,9 @@ export default function AdminProgramsPage() {
           : 'Program saved on this device only. Configure Supabase to sync it across devices.',
       )
     } catch (error) {
-      notify(error instanceof Error ? error.message : 'Could not save this program to the database.')
+      notify(error instanceof Error ? error.message : 'Could not save this program to the database.', 10000)
+    } finally {
+      setIsSaving(false)
     }
   }
 
@@ -348,7 +365,14 @@ export default function AdminProgramsPage() {
             {filtered.map((program) => (
               <article key={program.id} className="overflow-hidden rounded-xl border border-[#18312a]/10 bg-white">
                 <div className="relative h-44 bg-[#18312a]/10">
-                  <img src={program.mainImage} alt={program.title} className="h-full w-full object-cover" />
+                  {program.mainImage ? (
+                    <img src={program.mainImage} alt={program.title} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center gap-2 text-[#718079]">
+                      <ImageIcon className="h-7 w-7" />
+                      <span className="text-xs">No image uploaded</span>
+                    </div>
+                  )}
                   <span className={`absolute left-3 top-3 rounded-full px-3 py-1 text-xs font-bold ${
                     program.status === 'past' ? 'bg-white text-[#18312a]' : 'bg-[#c9ec63] text-[#18312a]'
                   }`}>
@@ -453,7 +477,7 @@ export default function AdminProgramsPage() {
                   </div>
                   <input ref={mainFileRef} type="file" accept="image/*" className="hidden" onChange={(event) => {
                     const file = event.target.files?.[0]
-                    if (file) readImage(file, 5, setMainImage)
+                    if (file) handleMainFileSelect(file)
                   }} />
                   {mainImage && <img src={mainImage} alt="Program preview" className="mt-3 h-36 w-full rounded-lg object-cover" />}
                 </div>
@@ -466,7 +490,7 @@ export default function AdminProgramsPage() {
                     </button>
                   </div>
                   <input ref={galleryFileRef} type="file" multiple accept="image/*" className="hidden" onChange={(event) => {
-                    Array.from(event.target.files || []).forEach((file) => readImage(file, 4, (value) => setGallery((items) => [...items, value])))
+                    handleGallerySelect(event.target.files)
                   }} />
                   {gallery.length > 0 && (
                     <div className="mt-3 grid grid-cols-4 gap-2">
@@ -489,7 +513,7 @@ export default function AdminProgramsPage() {
 
                 <label className="grid gap-1.5 text-sm font-bold">
                   Key highlights (one per line)
-                  <textarea rows={3} value={highlights} onChange={(event) => setHighlights(event.target.value)} placeholder={'500 students reached\n1,000 exercise books distributed'} className="resize-none rounded-lg border border-[#18312a]/15 px-3 py-2.5 font-normal outline-none focus:border-[#18312a]" />
+                  <textarea rows={3} value={highlights} onChange={(event) => setHighlights(event.target.value)} placeholder="Enter one highlight per line" className="resize-none rounded-lg border border-[#18312a]/15 px-3 py-2.5 font-normal outline-none focus:border-[#18312a]" />
                 </label>
 
                 <label className="grid gap-1.5 text-sm font-bold">
@@ -500,8 +524,8 @@ export default function AdminProgramsPage() {
 
               <div className="mt-6 flex justify-end gap-2 border-t border-[#18312a]/10 pt-5">
                 <button type="button" onClick={() => setModalOpen(false)} className="rounded-lg px-4 py-2.5 text-sm font-bold text-[#718079]">Cancel</button>
-                <button type="submit" className="rounded-lg bg-[#18312a] px-5 py-2.5 text-sm font-bold text-white">
-                  {editingId ? 'Save changes' : 'Publish program'}
+                <button type="submit" disabled={isSaving || isCompressing} className="rounded-lg bg-[#18312a] px-5 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+                  {isSaving ? 'Publishing to database...' : isCompressing ? 'Processing photos...' : (editingId ? 'Save changes' : 'Publish program')}
                 </button>
               </div>
             </form>
