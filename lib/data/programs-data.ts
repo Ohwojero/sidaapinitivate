@@ -1,5 +1,7 @@
 'use client'
 
+import { createClient } from '@/lib/supabase/client'
+
 export interface ProgramActivity {
   id: string
   title: string
@@ -156,6 +158,27 @@ export function saveStoredProgram(program: ProgramActivity): ProgramActivity[] {
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
   window.dispatchEvent(new Event('sidaap_programs_updated'))
+
+  const supabase = createClient()
+  if (supabase) {
+    supabase.from('program_activities').upsert({
+      id: program.id,
+      title: program.title,
+      status: program.status,
+      date: program.date,
+      category: program.category,
+      state: program.state,
+      location: program.location,
+      description: program.description,
+      main_image: program.mainImage,
+      gallery_images: program.galleryImages ?? [],
+      highlights: program.highlights ?? [],
+      organizer: program.organizer ?? null,
+      created_at: program.createdAt,
+    }, { onConflict: 'id' }).then(({ error }: { error: unknown }) => {
+      if (error) console.error('[sidaap:programs] save failed', error)
+    })
+  }
   return updated
 }
 
@@ -165,6 +188,12 @@ export function deleteStoredProgram(id: string): ProgramActivity[] {
   const updated = current.filter(p => p.id !== id)
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
   window.dispatchEvent(new Event('sidaap_programs_updated'))
+  const supabase = createClient()
+  if (supabase) {
+    supabase.from('program_activities').delete().eq('id', id).then(({ error }: { error: unknown }) => {
+      if (error) console.error('[sidaap:programs] delete failed', error)
+    })
+  }
   return updated
 }
 
@@ -173,4 +202,40 @@ export function resetProgramsToDefault(): ProgramActivity[] {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_PROGRAMS))
   window.dispatchEvent(new Event('sidaap_programs_updated'))
   return INITIAL_PROGRAMS
+}
+
+export async function fetchStoredPrograms(): Promise<ProgramActivity[]> {
+  const fallback = getStoredPrograms()
+  const supabase = createClient()
+  if (!supabase) return fallback
+  try {
+    const { data, error } = await supabase
+      .from('program_activities')
+      .select('*')
+      .order('created_at', { ascending: false })
+    if (error || !data) return fallback
+    if (data.length > 0) {
+      const programs: ProgramActivity[] = data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        status: item.status,
+        date: item.date,
+        category: item.category,
+        state: item.state,
+        location: item.location,
+        description: item.description,
+        mainImage: item.main_image,
+        galleryImages: item.gallery_images ?? [],
+        highlights: item.highlights ?? [],
+        organizer: item.organizer ?? undefined,
+        createdAt: item.created_at,
+      }))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(programs))
+      window.dispatchEvent(new Event('sidaap_programs_updated'))
+      return programs
+    }
+  } catch (error) {
+    console.error('[sidaap:programs] fetch failed', error)
+  }
+  return fallback
 }

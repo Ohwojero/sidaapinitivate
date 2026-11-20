@@ -1,9 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
   HeartHandshake,
   MapPin,
   Phone,
@@ -11,16 +13,89 @@ import {
   Trophy,
 } from 'lucide-react'
 import { getStoredDirectors, StateDirector } from '@/lib/data/portal-data'
+import { fetchDirectors } from '@/lib/supabase/portal'
+import {
+  fetchStoredLeadership,
+  getStoredLeadership,
+  LeadershipMember,
+} from '@/lib/data/leadership-data'
 
 export default function HomePage() {
   const [stateDirectors, setStateDirectors] = useState<StateDirector[]>(getStoredDirectors)
+  const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
+  const [activeSlide, setActiveSlide] = useState(0)
 
   useEffect(() => {
     const refresh = () => setStateDirectors(getStoredDirectors())
+    const refreshLeadership = () => setLeadership(getStoredLeadership())
     refresh()
+    refreshLeadership()
+    void fetchDirectors().then(setStateDirectors)
+    void fetchStoredLeadership().then(setLeadership)
     window.addEventListener('storage', refresh)
-    return () => window.removeEventListener('storage', refresh)
+    window.addEventListener('sidaap_leadership_updated', refreshLeadership)
+    return () => {
+      window.removeEventListener('storage', refresh)
+      window.removeEventListener('sidaap_leadership_updated', refreshLeadership)
+    }
   }, [])
+
+  const carouselSlides = useMemo(() => {
+    const nationalDirector =
+      leadership.find((leader) => leader.role.toLowerCase().includes('national executive')) ??
+      leadership[0]
+    const trustees = leadership.filter((leader) => leader.id !== nationalDirector?.id)
+
+    return [
+      ...(nationalDirector
+        ? [{
+            id: `national-${nationalDirector.id}`,
+            name: nationalDirector.name,
+            role: nationalDirector.role,
+            area: 'National leadership',
+            image: nationalDirector.image,
+            initials: nationalDirector.initials,
+          }]
+        : []),
+      ...stateDirectors
+        .filter((director) => director.status === 'active')
+        .map((director) => ({
+          id: `state-${director.id}`,
+          name: director.name,
+          role: 'State Director',
+          area: `${director.state} · ${director.lga} LGA`,
+          image: director.avatarUrl || '',
+          initials: director.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
+        })),
+      ...trustees.map((leader) => ({
+        id: leader.id,
+        name: leader.name,
+        role: leader.role,
+        area: 'Board of Trustees',
+        image: leader.image,
+        initials: leader.initials,
+      })),
+    ]
+  }, [leadership, stateDirectors])
+
+  useEffect(() => {
+    if (carouselSlides.length < 2) return
+    const timer = window.setInterval(() => {
+      setActiveSlide((current) => (current + 1) % carouselSlides.length)
+    }, 5500)
+    return () => window.clearInterval(timer)
+  }, [carouselSlides.length])
+
+  useEffect(() => {
+    if (activeSlide >= carouselSlides.length) setActiveSlide(0)
+  }, [activeSlide, carouselSlides.length])
+
+  const changeSlide = (direction: -1 | 1) => {
+    setActiveSlide((current) =>
+      (current + direction + carouselSlides.length) % carouselSlides.length,
+    )
+  }
+  const activeProfile = carouselSlides[activeSlide]
 
   return (
     <main className="min-h-screen bg-[#f7f5ef] text-[#18312a]">
@@ -76,18 +151,63 @@ export default function HomePage() {
           </div>
 
           <div className="relative mx-auto w-full max-w-[470px]">
-            <div className="aspect-[4/5] overflow-hidden rounded-[2rem] bg-[#18312a]">
-              <img
-                src="/hero-portrait.jpg"
-                alt="Friday Chalele, National Executive Director of SIDAAP"
-                className="h-full w-full object-cover object-top"
-              />
-            </div>
-            <div className="absolute bottom-5 left-5 right-5 rounded-2xl border border-white/20 bg-[#18312a]/95 p-5 text-white backdrop-blur">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c9ec63]">
-                National Executive Director
-              </p>
-              <p className="mt-1 text-xl font-bold">Friday Chalele</p>
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[2rem] bg-[#18312a]">
+              {activeProfile?.image ? (
+                <img
+                  key={activeProfile.id}
+                  src={activeProfile.image}
+                  alt={activeProfile.name}
+                  className="h-full w-full object-cover object-top transition-opacity duration-500"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#18312a] to-[#315248]">
+                  <span className="flex h-36 w-36 items-center justify-center rounded-full border border-[#c9ec63]/50 bg-[#c9ec63] text-5xl font-black text-[#18312a]">
+                    {activeProfile?.initials || 'S'}
+                  </span>
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 h-48 bg-gradient-to-t from-[#101e1a] via-[#101e1a]/50 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-7">
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c9ec63]">
+                  {activeProfile?.area || 'SIDAAP leadership'}
+                </p>
+                <h2 className="mt-2 text-2xl font-bold">{activeProfile?.name || 'SIDAAP Nigeria'}</h2>
+                <p className="mt-1 text-sm text-white/75">{activeProfile?.role || 'Leadership team'}</p>
+              </div>
+              {carouselSlides.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => changeSlide(-1)}
+                    aria-label="Previous leader"
+                    className="absolute left-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/60"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeSlide(1)}
+                    aria-label="Next leader"
+                    className="absolute right-4 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur hover:bg-black/60"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                  <div className="absolute bottom-2 right-6 flex gap-1.5">
+                    {carouselSlides.map((slide, index) => (
+                      <button
+                        key={slide.id}
+                        type="button"
+                        onClick={() => setActiveSlide(index)}
+                        aria-label={`Show ${slide.name}`}
+                        aria-current={index === activeSlide}
+                        className={`h-1.5 rounded-full transition-all ${
+                          index === activeSlide ? 'w-6 bg-[#c9ec63]' : 'w-1.5 bg-white/70'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
+import { fetchStoredLeadership, getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
 import {
   ShieldCheck,
   HeartHandshake,
@@ -23,6 +23,7 @@ export default function AboutPage() {
   useEffect(() => {
     const refresh = () => setLeaders(getStoredLeadership())
     refresh()
+    fetchStoredLeadership().then(setLeaders)
     window.addEventListener('sidaap_leadership_updated', refresh)
     return () => window.removeEventListener('sidaap_leadership_updated', refresh)
   }, [])

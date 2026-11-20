@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Pencil, X } from 'lucide-react'
 import {
   getStoredLeadership,
+  fetchStoredLeadership,
   LeadershipMember,
   saveStoredLeadership,
 } from '@/lib/data/leadership-data'
@@ -15,6 +16,7 @@ export default function BoardOfTrusteesPage() {
   useEffect(() => {
     const refresh = () => setLeadership(getStoredLeadership())
     refresh()
+    fetchStoredLeadership().then(setLeadership)
     window.addEventListener('sidaap_leadership_updated', refresh)
     return () => window.removeEventListener('sidaap_leadership_updated', refresh)
   }, [])

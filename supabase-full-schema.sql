@@ -148,6 +148,50 @@ create table if not exists public.chat_messages (
 create index if not exists chat_messages_room_id_idx on public.chat_messages (room_id, created_at);
 
 
+-- ── 8. BOARD OF TRUSTEES / LEADERSHIP ────────────────────────────────────────
+create table if not exists public.leadership (
+  id           text primary key,
+  name         text not null,
+  role         text not null,
+  description  text not null,
+  image        text,
+  initials     text not null,
+  created_at   timestamptz not null default now()
+);
+
+insert into public.leadership (id, name, role, description, image, initials)
+values
+  ('leader-friday-chalele', 'Friday Chalele', 'National Executive Director & Trustee', 'Strategic oversight and national community engagement.', '/hero-portrait.jpg', 'FC'),
+  ('leader-doris-bode', 'Doris Bode', 'Trustee', 'Counseling coordination and family welfare advocacy.', null, 'DB'),
+  ('leader-steve-ahans', 'Steve Ahans', 'Trustee', 'Institutional partnerships and inter-agency liaison.', null, 'SA'),
+  ('leader-praise-efe', 'Praise Ohwojero Efe', 'Trustee', 'School educational outreach and youth assemblies.', null, 'PE'),
+  ('leader-anthony-donald', 'Anthony Odianosen Donald', 'Trustee', 'Policy research, advocacy and legal compliance.', null, 'AD'),
+  ('leader-prosper-ohwojero', 'Prosper Ohwojero', 'Trustee & Sports Director', 'Football academy and youth athletic programmes.', null, 'PO')
+on conflict (id) do nothing;
+
+
+-- ── 9. PUBLIC PROGRAM ACTIVITIES ─────────────────────────────────────────────
+create table if not exists public.program_activities (
+  id             text primary key,
+  title          text not null,
+  status         text not null default 'past'
+                   check (status in ('past','upcoming','ongoing')),
+  date           text not null,
+  category       text not null,
+  state          text not null,
+  location       text not null,
+  description    text not null,
+  main_image     text,
+  gallery_images jsonb not null default '[]'::jsonb,
+  highlights     jsonb not null default '[]'::jsonb,
+  organizer      text,
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists program_activities_state_idx on public.program_activities (state);
+create index if not exists program_activities_status_idx on public.program_activities (status);
+
+
 -- ── ENABLE REALTIME ──────────────────────────────────────────────────────────
 do $$
 begin
@@ -190,6 +234,8 @@ alter table public.state_activities    enable row level security;
 alter table public.national_directives enable row level security;
 alter table public.chat_rooms          enable row level security;
 alter table public.chat_messages       enable row level security;
+alter table public.leadership          enable row level security;
+alter table public.program_activities  enable row level security;
 
 -- users
 create policy "Anyone can read users"        on public.users for select using (true);
@@ -222,6 +268,18 @@ create policy "Anyone can insert rooms"      on public.chat_rooms for insert wit
 -- chat_messages
 create policy "Anyone can read messages"     on public.chat_messages for select using (true);
 create policy "Anyone can insert messages"   on public.chat_messages for insert with check (true);
+
+-- board of trustees / leadership
+create policy "Anyone can read leadership"   on public.leadership for select using (true);
+create policy "Anyone can insert leadership" on public.leadership for insert with check (true);
+create policy "Anyone can update leadership" on public.leadership for update using (true);
+create policy "Anyone can delete leadership" on public.leadership for delete using (true);
+
+-- public programs
+create policy "Anyone can read programs"   on public.program_activities for select using (true);
+create policy "Anyone can insert programs" on public.program_activities for insert with check (true);
+create policy "Anyone can update programs" on public.program_activities for update using (true);
+create policy "Anyone can delete programs" on public.program_activities for delete using (true);
 create policy "Anyone can update messages"   on public.chat_messages for update using (true);
 
 

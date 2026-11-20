@@ -18,7 +18,8 @@ import {
 } from 'lucide-react'
 import {
   ProgramActivity,
-  getStoredPrograms
+  getStoredPrograms,
+  fetchStoredPrograms
 } from '@/lib/data/programs-data'
 
 export default function ProgramsPage() {
@@ -31,6 +32,7 @@ export default function ProgramsPage() {
 
   useEffect(() => {
     setPrograms(getStoredPrograms())
+    fetchStoredPrograms().then(setPrograms)
     const handleUpdate = () => {
       setPrograms(getStoredPrograms())
     }

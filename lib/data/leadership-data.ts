@@ -1,5 +1,7 @@
 'use client'
 
+import { createClient } from '@/lib/supabase/client'
+
 export interface LeadershipMember {
   id: string
   name: string
@@ -79,6 +81,49 @@ export function saveStoredLeadership(member: LeadershipMember): LeadershipMember
     : [member, ...current]
   localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
   window.dispatchEvent(new Event('sidaap_leadership_updated'))
+
+  const supabase = createClient()
+  if (supabase) {
+    supabase.from('leadership').upsert({
+      id: member.id,
+      name: member.name,
+      role: member.role,
+      description: member.description,
+      image: member.image || null,
+      initials: member.initials,
+    }, { onConflict: 'id' }).then(({ error }: { error: unknown }) => {
+      if (error) console.error('[sidaap:leadership] save failed', error)
+    })
+  }
   return updated
+}
+
+export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
+  const fallback = getStoredLeadership()
+  const supabase = createClient()
+  if (!supabase) return fallback
+  try {
+    const { data, error } = await supabase
+      .from('leadership')
+      .select('*')
+      .order('created_at', { ascending: true })
+    if (error || !data) return fallback
+    const leadership = data.map((item: any): LeadershipMember => ({
+      id: item.id,
+      name: item.name,
+      role: item.role,
+      description: item.description,
+      image: item.image ?? '',
+      initials: item.initials,
+    }))
+    if (leadership.length > 0) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(leadership))
+      window.dispatchEvent(new Event('sidaap_leadership_updated'))
+      return leadership
+    }
+  } catch (error) {
+    console.error('[sidaap:leadership] fetch failed', error)
+  }
+  return fallback
 }
 

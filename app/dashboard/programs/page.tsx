@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react'
 import {
   deleteStoredProgram,
   getStoredPrograms,
+  fetchStoredPrograms,
   saveStoredProgram,
   ProgramActivity,
 } from '@/lib/data/programs-data'
@@ -67,6 +68,7 @@ export default function AdminProgramsPage() {
     const user = getStoredUser()
     setCurrentUser(user)
     setPrograms(getStoredPrograms())
+    fetchStoredPrograms().then(setPrograms)
     const refresh = () => setPrograms(getStoredPrograms())
     window.addEventListener('sidaap_programs_updated', refresh)
     return () => window.removeEventListener('sidaap_programs_updated', refresh)

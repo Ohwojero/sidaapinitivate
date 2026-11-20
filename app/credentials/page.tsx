@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
+import { fetchStoredLeadership, getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
 import {
   CREDENTIAL_DOCUMENTS,
   CredentialDocument
@@ -31,6 +31,7 @@ export default function CredentialsPage() {
   useEffect(() => {
     const refresh = () => setLeadership(getStoredLeadership())
     refresh()
+    fetchStoredLeadership().then(setLeadership)
     window.addEventListener('sidaap_leadership_updated', refresh)
     return () => window.removeEventListener('sidaap_leadership_updated', refresh)
   }, [])
