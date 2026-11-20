@@ -26,6 +26,7 @@ import {
 } from '@/lib/data/programs-data'
 import { NIGERIA_STATES } from '@/lib/data/nigeria-data'
 import { AuthUser, getStoredUser } from '@/lib/auth/session'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 
 const CATEGORIES = [
   'School Outreach',
@@ -131,7 +132,7 @@ export default function AdminProgramsPage() {
     reader.readAsDataURL(file)
   }
 
-  const saveProgram = (event: React.FormEvent) => {
+  const saveProgram = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!title.trim() || !description.trim()) {
       notify('Add a title and description before publishing')
@@ -166,23 +167,47 @@ export default function AdminProgramsPage() {
       createdAt: existing?.createdAt || new Date().toISOString(),
     }
 
-    saveStoredProgram(program)
-    setModalOpen(false)
-    notify(editingId ? 'Program updated' : 'Program published')
+    try {
+      await saveStoredProgram(program)
+      setModalOpen(false)
+      notify(
+        isSupabaseConfigured()
+          ? (editingId ? 'Program updated in the database' : 'Program published to the database')
+          : 'Program saved on this device only. Configure Supabase to sync it across devices.',
+      )
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not save this program to the database.')
+    }
   }
 
-  const removeProgram = (program: ProgramActivity) => {
+  const removeProgram = async (program: ProgramActivity) => {
     if (!window.confirm(`Delete "${program.title}"?`)) return
-    deleteStoredProgram(program.id)
-    notify('Program deleted')
+    try {
+      await deleteStoredProgram(program.id)
+      notify(
+        isSupabaseConfigured()
+          ? 'Program deleted from the database'
+          : 'Program deleted on this device only. Configure Supabase to sync it across devices.',
+      )
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not delete this program from the database.')
+    }
   }
 
-  const toggleStatus = (program: ProgramActivity) => {
-    saveStoredProgram({
-      ...program,
-      status: program.status === 'past' ? 'upcoming' : 'past',
-    })
-    notify('Program status updated')
+  const toggleStatus = async (program: ProgramActivity) => {
+    try {
+      await saveStoredProgram({
+        ...program,
+        status: program.status === 'past' ? 'upcoming' : 'past',
+      })
+      notify(
+        isSupabaseConfigured()
+          ? 'Program status updated in the database'
+          : 'Program status updated on this device only. Configure Supabase to sync it across devices.',
+      )
+    } catch (error) {
+      notify(error instanceof Error ? error.message : 'Could not update this program in the database.')
+    }
   }
 
   const managedPrograms = isStateDirector

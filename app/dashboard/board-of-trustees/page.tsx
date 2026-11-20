@@ -1,17 +1,20 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Pencil, X } from 'lucide-react'
+import { Pencil, Plus, X } from 'lucide-react'
 import {
   getStoredLeadership,
   fetchStoredLeadership,
   LeadershipMember,
   saveStoredLeadership,
 } from '@/lib/data/leadership-data'
+import { isSupabaseConfigured } from '@/lib/supabase/client'
 
 export default function BoardOfTrusteesPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
   const [editingLeader, setEditingLeader] = useState<LeadershipMember | null>(null)
+  const [isAddingLeader, setIsAddingLeader] = useState(false)
+  const [notice, setNotice] = useState('')
 
   useEffect(() => {
     const refresh = () => setLeadership(getStoredLeadership())
@@ -21,7 +24,7 @@ export default function BoardOfTrusteesPage() {
     return () => window.removeEventListener('sidaap_leadership_updated', refresh)
   }, [])
 
-  const saveLeader = (event: React.FormEvent) => {
+  const saveLeader = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!editingLeader) return
     const updated = {
@@ -33,19 +36,56 @@ export default function BoardOfTrusteesPage() {
         .slice(0, 2)
         .toUpperCase(),
     }
-    setLeadership(saveStoredLeadership(updated))
-    setEditingLeader(null)
+    try {
+      setLeadership(await saveStoredLeadership(updated))
+      setEditingLeader(null)
+      setIsAddingLeader(false)
+      setNotice(
+        isSupabaseConfigured()
+          ? 'Trustee saved to the database.'
+          : 'Trustee saved on this device only. Configure Supabase to sync it across devices.',
+      )
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not save this trustee to the database.')
+    }
+  }
+
+  const addLeader = () => {
+    setIsAddingLeader(true)
+    setEditingLeader({
+      id: `leader-${crypto.randomUUID()}`,
+      name: '',
+      role: 'Trustee',
+      description: '',
+      image: '',
+      initials: '',
+    })
   }
 
   return (
     <div className="min-h-full bg-[#f4f6f3] p-4 text-[#18312a] sm:p-6 lg:p-8">
+      {notice && (
+        <div role="status" className="fixed right-5 top-20 z-[70] rounded-lg border border-[#18312a]/15 bg-white px-4 py-3 text-sm font-semibold shadow-xl">
+          {notice}
+        </div>
+      )}
       <div className="mx-auto max-w-7xl">
         <div className="border-b border-[#18312a]/10 pb-6">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#52720e]">National governance</p>
           <h1 className="mt-2 text-3xl font-bold tracking-tight">Board of Trustees</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#718079]">
-            Manage trustee names, roles, biographies and public portraits.
-          </p>
+          <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <p className="max-w-2xl text-sm leading-6 text-[#718079]">
+              Manage trustee names, roles, biographies and public portraits.
+            </p>
+            <button
+              type="button"
+              onClick={addLeader}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#18312a] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#27483f]"
+            >
+              <Plus className="h-4 w-4" />
+              Add member
+            </button>
+          </div>
         </div>
 
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -68,7 +108,10 @@ export default function BoardOfTrusteesPage() {
                 <p className="mt-3 min-h-12 text-sm leading-6 text-[#718079]">{leader.description}</p>
                 <button
                   type="button"
-                  onClick={() => setEditingLeader({ ...leader })}
+                  onClick={() => {
+                    setIsAddingLeader(false)
+                    setEditingLeader({ ...leader })
+                  }}
                   className="mt-4 flex items-center gap-2 rounded-lg border border-[#18312a]/15 px-3 py-2 text-xs font-bold hover:border-[#18312a]"
                 >
                   <Pencil className="h-3.5 w-3.5" />
@@ -86,9 +129,14 @@ export default function BoardOfTrusteesPage() {
             <div className="flex items-center justify-between border-b border-[#18312a]/10 px-5 py-4">
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-[#52720e]">Trustee profile</p>
-                <h2 className="mt-1 text-lg font-bold">Edit {editingLeader.name}</h2>
+                <h2 className="mt-1 text-lg font-bold">
+                  {isAddingLeader ? 'Add trustee member' : `Edit ${editingLeader.name}`}
+                </h2>
               </div>
-              <button type="button" onClick={() => setEditingLeader(null)} className="rounded-lg p-2 hover:bg-[#18312a]/5" aria-label="Close">
+              <button type="button" onClick={() => {
+                setEditingLeader(null)
+                setIsAddingLeader(false)
+              }} className="rounded-lg p-2 hover:bg-[#18312a]/5" aria-label="Close">
                 <X className="h-5 w-5" />
               </button>
             </div>
@@ -132,8 +180,13 @@ export default function BoardOfTrusteesPage() {
                 <textarea required rows={3} value={editingLeader.description} onChange={(event) => setEditingLeader({ ...editingLeader, description: event.target.value })} className="resize-none rounded-lg border border-[#18312a]/15 px-3 py-2.5 font-normal" />
               </label>
               <div className="flex justify-end gap-2 border-t border-[#18312a]/10 pt-4">
-                <button type="button" onClick={() => setEditingLeader(null)} className="rounded-lg px-4 py-2.5 text-xs font-bold text-[#718079]">Cancel</button>
-                <button type="submit" className="rounded-lg bg-[#18312a] px-5 py-2.5 text-xs font-bold text-white">Save profile</button>
+                <button type="button" onClick={() => {
+                  setEditingLeader(null)
+                  setIsAddingLeader(false)
+                }} className="rounded-lg px-4 py-2.5 text-xs font-bold text-[#718079]">Cancel</button>
+                <button type="submit" className="rounded-lg bg-[#18312a] px-5 py-2.5 text-xs font-bold text-white">
+                  {isAddingLeader ? 'Add member' : 'Save profile'}
+                </button>
               </div>
             </form>
           </div>

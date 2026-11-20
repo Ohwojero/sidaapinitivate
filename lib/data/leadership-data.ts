@@ -73,7 +73,7 @@ export function getStoredLeadership(): LeadershipMember[] {
   return INITIAL_LEADERSHIP
 }
 
-export function saveStoredLeadership(member: LeadershipMember): LeadershipMember[] {
+export async function saveStoredLeadership(member: LeadershipMember): Promise<LeadershipMember[]> {
   const current = getStoredLeadership()
   const existing = current.some((item) => item.id === member.id)
   const updated = existing
@@ -84,16 +84,18 @@ export function saveStoredLeadership(member: LeadershipMember): LeadershipMember
 
   const supabase = createClient()
   if (supabase) {
-    supabase.from('leadership').upsert({
+    const { error } = await supabase.from('leadership').upsert({
       id: member.id,
       name: member.name,
       role: member.role,
       description: member.description,
       image: member.image || null,
       initials: member.initials,
-    }, { onConflict: 'id' }).then(({ error }: { error: unknown }) => {
-      if (error) console.error('[sidaap:leadership] save failed', error)
-    })
+    }, { onConflict: 'id' })
+    if (error) {
+      console.error('[sidaap:leadership] save failed', error)
+      throw new Error('The trustee was saved on this device, but Supabase rejected the database update.')
+    }
   }
   return updated
 }
@@ -107,7 +109,11 @@ export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
       .from('leadership')
       .select('*')
       .order('created_at', { ascending: true })
-    if (error || !data) return fallback
+    if (error) {
+      console.error('[sidaap:leadership] fetch failed', error)
+      return fallback
+    }
+    if (!data) return fallback
     const leadership = data.map((item: any): LeadershipMember => ({
       id: item.id,
       name: item.name,
