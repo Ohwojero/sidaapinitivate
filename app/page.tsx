@@ -20,6 +20,10 @@ import {
   LeadershipMember,
 } from '@/lib/data/leadership-data'
 
+function getCarouselImage(image: string | null | undefined): string {
+  return image && !/images\.unsplash\.com|source\.unsplash\.com/i.test(image) ? image : ''
+}
+
 export default function HomePage() {
   const [stateDirectors, setStateDirectors] = useState<StateDirector[]>(getStoredDirectors)
   const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
@@ -60,7 +64,7 @@ export default function HomePage() {
             name: nationalDirector.name,
             role: nationalDirector.role,
             area: 'National leadership',
-            image: nationalDirector.image,
+            image: getCarouselImage(nationalDirector.image),
             initials: nationalDirector.initials,
           }]
         : []),
@@ -71,7 +75,7 @@ export default function HomePage() {
           name: director.name,
           role: 'State Director',
           area: `${director.state} · ${director.lga} LGA`,
-          image: director.avatarUrl || '',
+          image: getCarouselImage(director.avatarUrl),
           initials: director.name.split(/\s+/).map((part) => part[0]).join('').slice(0, 2).toUpperCase(),
         })),
       ...trustees.map((leader) => ({
@@ -79,7 +83,7 @@ export default function HomePage() {
         name: leader.name,
         role: leader.role,
         area: 'Board of Trustees',
-        image: leader.image,
+        image: getCarouselImage(leader.image),
         initials: leader.initials,
       })),
       ...otherNationalLeaders.map((leader) => ({
@@ -87,7 +91,7 @@ export default function HomePage() {
         name: leader.name,
         role: leader.role,
         area: 'National leadership',
-        image: leader.image,
+        image: getCarouselImage(leader.image),
         initials: leader.initials,
       })),
     ]
