@@ -176,8 +176,8 @@ export default function BoardOfTrusteesPage() {
                 <input required value={editingLeader.role} onChange={(event) => setEditingLeader({ ...editingLeader, role: event.target.value })} className="rounded-lg border border-[#18312a]/15 px-3 py-2.5 font-normal" />
               </label>
               <label className="grid gap-1.5 text-xs font-bold">
-                Brief description
-                <textarea required rows={3} value={editingLeader.description} onChange={(event) => setEditingLeader({ ...editingLeader, description: event.target.value })} className="resize-none rounded-lg border border-[#18312a]/15 px-3 py-2.5 font-normal" />
+                Brief description <span className="font-normal text-[#718079]">(optional)</span>
+                <textarea rows={3} value={editingLeader.description} onChange={(event) => setEditingLeader({ ...editingLeader, description: event.target.value })} className="resize-none rounded-lg border border-[#18312a]/15 px-3 py-2.5 font-normal" />
               </label>
               <div className="flex justify-end gap-2 border-t border-[#18312a]/10 pt-4">
                 <button type="button" onClick={() => {

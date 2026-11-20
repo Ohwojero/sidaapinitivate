@@ -42,9 +42,16 @@ export default function HomePage() {
 
   const carouselSlides = useMemo(() => {
     const nationalDirector =
-      leadership.find((leader) => leader.role.toLowerCase().includes('national executive')) ??
+      leadership.find((leader) => {
+        const role = leader.role.toLowerCase()
+        return role.includes('national executive') || role.includes('national director')
+      }) ??
       leadership[0]
-    const trustees = leadership.filter((leader) => leader.id !== nationalDirector?.id)
+    const remainingLeaders = leadership.filter((leader) => leader.id !== nationalDirector?.id)
+    const trustees = remainingLeaders.filter((leader) => leader.role.toLowerCase().includes('trustee'))
+    const otherNationalLeaders = remainingLeaders.filter(
+      (leader) => !leader.role.toLowerCase().includes('trustee'),
+    )
 
     return [
       ...(nationalDirector
@@ -72,6 +79,14 @@ export default function HomePage() {
         name: leader.name,
         role: leader.role,
         area: 'Board of Trustees',
+        image: leader.image,
+        initials: leader.initials,
+      })),
+      ...otherNationalLeaders.map((leader) => ({
+        id: leader.id,
+        name: leader.name,
+        role: leader.role,
+        area: 'National leadership',
         image: leader.image,
         initials: leader.initials,
       })),
