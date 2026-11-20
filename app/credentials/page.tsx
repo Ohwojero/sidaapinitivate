@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
 import {
   CREDENTIAL_DOCUMENTS,
   CredentialDocument
@@ -25,6 +26,14 @@ export default function CredentialsPage() {
   const [selectedDoc, setSelectedDoc] = useState<CredentialDocument | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'incorporation' | 'trademark' | 'compliance' | 'subsidiary'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
+
+  useEffect(() => {
+    const refresh = () => setLeadership(getStoredLeadership())
+    refresh()
+    window.addEventListener('sidaap_leadership_updated', refresh)
+    return () => window.removeEventListener('sidaap_leadership_updated', refresh)
+  }, [])
 
   const filteredDocs = CREDENTIAL_DOCUMENTS.filter((doc) => {
     const matchesCategory = activeFilter === 'all' || doc.category === activeFilter
@@ -219,24 +228,25 @@ export default function CredentialsPage() {
             As officially certified under the Companies and Allied Matters Act (CAC RN: 8390984), the following individuals are the appointed trustees entrusted with governance, fiduciary accountability, and national outreach policy:
           </p>
 
-          <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {[
-              { name: 'Friday Chalele', role: 'Trustee' },
-              { name: 'Doris Bode', role: 'Trustee' },
-              { name: 'Steve Ahans', role: 'Trustee' },
-              { name: 'Praise Ohwojero Efe', role: 'Trustee' },
-              { name: 'Anthony Odianosen Donald', role: 'Trustee' },
-              { name: 'Prosper Ohwojero', role: 'Trustee & Sports Director' },
-            ].map((trustee) => (
-              <div key={trustee.name} className="flex items-center gap-3 p-4 rounded-xl bg-stone-50 border border-stone-200/60">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#13231f] text-[#c9ec63] font-bold text-sm">
-                  {trustee.name[0]}
+          <div className="mt-8 grid sm:grid-cols-2 md:grid-cols-3 gap-5">
+            {leadership.map((trustee) => (
+              <article key={trustee.name} className="overflow-hidden rounded-xl border border-stone-200 bg-stone-50">
+                <div className="h-36 bg-[#13231f]">
+                  {trustee.image ? (
+                    <img src={trustee.image} alt={trustee.name} className="h-full w-full object-cover object-top" />
+                  ) : (
+                    <div className="flex h-full items-center justify-center">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#c9ec63] bg-[#c9ec63] text-xl font-black text-[#13231f]">
+                        {trustee.initials}
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <h4 className="font-bold text-stone-900 text-sm">{trustee.name}</h4>
-                  <span className="text-[11px] text-stone-500 uppercase tracking-wider">{trustee.role}</span>
+                <div className="p-4">
+                  <h3 className="font-bold text-stone-900">{trustee.name}</h3>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-emerald-700">{trustee.role}</p>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
 

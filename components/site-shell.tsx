@@ -1,10 +1,8 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-import { EmergencyBanner } from '@/components/emergency-banner'
 import { Navbar } from '@/components/navbar'
 import { Footer } from '@/components/footer'
-import { LiveChatWidget } from '@/components/live-chat-widget'
 
 export function SiteShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -17,11 +15,9 @@ export function SiteShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <EmergencyBanner />
       <Navbar />
       <div className="flex-1">{children}</div>
       <Footer />
-      <LiveChatWidget />
     </>
   )
 }

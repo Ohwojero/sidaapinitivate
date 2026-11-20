@@ -5,9 +5,7 @@ import {
   MessageSquare,
   X,
   Send,
-  PhoneCall,
   ShieldCheck,
-  ExternalLink,
   ArrowRight,
   Check,
   CheckCheck
@@ -39,14 +37,12 @@ function getRoomId(state: string, phone: string) {
 
 export function LiveChatWidget() {
   const [isOpen, setIsOpen]           = useState(false)
-  const [activeTab, setActiveTab]     = useState<'chat' | 'whatsapp'>('chat')
   const [registered, setRegistered]   = useState(false)
   const [phone, setPhone]             = useState('')
   const [state, setState]             = useState('Lagos')
   const [inputMsg, setInputMsg]       = useState('')
   const [messages, setMessages]       = useState<ChatMessage[]>([])
   const [unread, setUnread]           = useState(0)
-  const [whatsappTopic, setWhatsappTopic] = useState('Rehab Referral')
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isSendingRef   = useRef(false)
@@ -150,24 +146,6 @@ export function LiveChatWidget() {
     }, 1000)
   }
 
-  // WhatsApp
-  const handleWhatsApp = (e: React.FormEvent) => {
-    e.preventDefault()
-    const now        = new Date()
-    const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`
-    sendChatMessage(roomId, {
-      id:         `wa-${Date.now()}`,
-      roomId,
-      senderId:   'wa-inquiry',
-      senderName: `${phone || 'Visitor'} (${state}) [WhatsApp]`,
-      senderRole: 'WhatsApp Lead',
-      text:       `Inquiry: ${whatsappTopic}. WhatsApp initiated to 0806 343 0562.`,
-      timestamp:  timeString
-    })
-    const text = `Hello SIDAAP Nigeria, I am ${phone || 'a visitor'} from ${state}. Inquiry: ${whatsappTopic}.`
-    window.open(`https://wa.me/2348063430562?text=${encodeURIComponent(text)}`, '_blank')
-  }
-
   return (
     <div className="fixed bottom-5 right-5 z-50 font-sans">
 
@@ -192,7 +170,7 @@ export function LiveChatWidget() {
               Live Crisis &amp; Support Desk
             </span>
             <span className="block text-[10px] text-[#a9b9a8] font-mono">
-              {unread > 0 ? `${unread} new repl${unread === 1 ? 'y' : 'ies'} from SIDAAP` : 'Chat on Web or WhatsApp • 24/7'}
+              {unread > 0 ? `${unread} new repl${unread === 1 ? 'y' : 'ies'} from SIDAAP` : 'Live Citizen Crisis Support • 24/7'}
             </span>
           </div>
         </button>
@@ -242,26 +220,9 @@ export function LiveChatWidget() {
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="grid grid-cols-2 bg-[#13231f]/60 p-1.5 border-b border-white/10 text-xs font-mono font-bold shrink-0">
-            <button
-              onClick={() => setActiveTab('chat')}
-              className={`py-2 rounded-xl transition flex items-center justify-center gap-2 ${activeTab === 'chat' ? 'bg-[#c9ec63] text-[#13231f]' : 'text-[#a9b9a8] hover:text-white'}`}
-            >
-              <MessageSquare className="h-3.5 w-3.5" /><span>Live Web Chat</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('whatsapp')}
-              className={`py-2 rounded-xl transition flex items-center justify-center gap-2 ${activeTab === 'whatsapp' ? 'bg-[#00a884] text-white' : 'text-[#a9b9a8] hover:text-white'}`}
-            >
-              <PhoneCall className="h-3.5 w-3.5" /><span>WhatsApp Desk</span>
-            </button>
-          </div>
-
-          {/* ── TAB 1: CHAT ── */}
-          {activeTab === 'chat' && (
-            <div className="flex-1 flex flex-col overflow-hidden">
-              {!registered ? (
+          {/* Live Chat Content */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {!registered ? (
                 /* Registration Form */
                 <form onSubmit={handleRegister} className="flex-1 p-5 flex flex-col justify-center gap-5">
                   <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-[11px] text-[#b6c4b9] leading-relaxed">
@@ -358,40 +319,6 @@ export function LiveChatWidget() {
                 </div>
               )}
             </div>
-          )}
-
-          {/* ── TAB 2: WHATSAPP ── */}
-          {activeTab === 'whatsapp' && (
-            <form onSubmit={handleWhatsApp} className="flex-1 p-5 flex flex-col justify-between overflow-y-auto">
-              <div className="space-y-4">
-                <div className="rounded-2xl bg-[#00a884]/15 border border-[#00a884]/30 p-3.5 text-xs text-emerald-200">
-                  <span className="font-bold text-white flex items-center gap-1.5 mb-1">
-                    <PhoneCall className="h-4 w-4 text-[#00a884]" />
-                    Official WhatsApp: 0806 343 0562
-                  </span>
-                  <p className="text-[11px] text-emerald-100/80">Connect directly to SIDAAP counselors. Your inquiry is logged in our portal.</p>
-                </div>
-                <div>
-                  <label className="block text-[11px] font-bold uppercase tracking-wider text-[#d1d9cf] mb-1">Topic</label>
-                  <select
-                    value={whatsappTopic}
-                    onChange={e => setWhatsappTopic(e.target.value)}
-                    className="w-full bg-[#162723] text-white px-3.5 py-2.5 rounded-xl border border-white/10 text-xs outline-none focus:border-[#00a884]"
-                  >
-                    <option value="Medical Rehab & Detox Referral">Medical Rehab &amp; Detox Referral</option>
-                    <option value="Confidential Crisis Counseling">Confidential Crisis Counseling</option>
-                    <option value="Secondary School Outreach & Exercise Books">Secondary School Outreach &amp; Books</option>
-                    <option value="SIDAAP Football Academy Enrolment">SIDAAP Football Academy Enrolment</option>
-                    <option value="Volunteer / Partnership with State Desk">Volunteer / Partnership</option>
-                  </select>
-                </div>
-              </div>
-              <button type="submit" className="w-full mt-4 py-3.5 rounded-xl bg-[#00a884] hover:bg-[#02be96] text-white font-bold uppercase tracking-wider text-xs transition shadow-xl flex items-center justify-center gap-2">
-                <span>Launch WhatsApp</span>
-                <ExternalLink className="h-4 w-4" />
-              </button>
-            </form>
-          )}
 
           {/* Footer */}
           <div className="p-2.5 bg-[#0c1614] border-t border-white/10 text-[10px] text-[#a9b9a8] font-mono text-center shrink-0">

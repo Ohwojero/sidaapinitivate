@@ -60,6 +60,8 @@ create table if not exists public.state_staff (
   state               text not null,
   lga                 text not null,
   city                text,
+  member_type         text not null default 'Member'
+                        check (member_type in ('Member','Staff')),
   role_title          text not null default 'Field Officer'
                         check (role_title in ('Field Officer','School Liaison','Youth Coach','Counselor','Volunteer')),
   joined_date         text not null default 'Today',
@@ -226,7 +228,7 @@ create policy "Anyone can update messages"   on public.chat_messages for update 
 -- ── SEED: OFFICIAL CHAT ROOMS ────────────────────────────────────────────────
 insert into public.chat_rooms (id, name, type, description, state, avatar_text, avatar_color)
 values
-  ('room-public-inquiries',    '🌐 Live Public Crisis & Citizen Help Desk',  'broadcast',   'Incoming live messages & WhatsApp inquiries from citizens, parents, and youth on the public website', null,      'SOS', 'bg-[#c9ec63] text-[#13231f]'),
+  ('room-public-inquiries',    '🌐 Live Public Crisis & Citizen Help Desk',  'broadcast',   'Incoming live messages from citizens, parents, and youth on the public website', null,      'SOS', 'bg-[#c9ec63] text-[#13231f]'),
   ('room-directors-executive', '🏛️ National Directors Executive Forum',       'broadcast',   'Private coordination channel for National Trustees, Executive Director, and all 36 State Directors',  null,      'NAT', 'bg-[#13231f]'),
   ('room-national-broadcast',  '📢 National Directives & Announcements',     'broadcast',   'Official policy broadcasts from the National Secretariat to all state chapters',                        null,      'HQ',  'bg-emerald-800'),
   ('room-lagos-chapter',       '📍 Lagos State Operations & Volunteers',      'state_group', 'Lagos State Directorate, LGA representatives, school liaison and volunteer team',                       'Lagos',   'LAG', 'bg-amber-800'),

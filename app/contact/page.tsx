@@ -172,7 +172,7 @@ export default function ContactPage() {
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block font-bold text-stone-700 mb-1">Telephone / WhatsApp Number</label>
+                      <label className="block font-bold text-stone-700 mb-1">Telephone / Mobile Number</label>
                       <input
                         required
                         type="tel"

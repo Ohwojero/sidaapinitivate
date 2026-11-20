@@ -1,4 +1,8 @@
+'use client'
+
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
+import { getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
 import {
   ShieldCheck,
   HeartHandshake,
@@ -13,12 +17,16 @@ import {
   CheckCircle2
 } from 'lucide-react'
 
-export const metadata = {
-  title: 'About Us & Governance — SIDAAP Nigeria',
-  description: 'Smart Initiative for Drug Abuse Awareness and Prevention (SIDAAP). CAC Registered RN: 8390984. Our aims, vision, trustees, and national partnerships.',
-}
-
 export default function AboutPage() {
+  const [leaders, setLeaders] = useState<LeadershipMember[]>(getStoredLeadership)
+
+  useEffect(() => {
+    const refresh = () => setLeaders(getStoredLeadership())
+    refresh()
+    window.addEventListener('sidaap_leadership_updated', refresh)
+    return () => window.removeEventListener('sidaap_leadership_updated', refresh)
+  }, [])
+
   return (
     <div className="bg-[#f5f1e9] min-h-screen">
       {/* Hero Header */}
@@ -146,27 +154,31 @@ export default function AboutPage() {
               Duly appointed under the Companies and Allied Matters Act 2020 to steward the organisation’s mission, legal compliance, and national expansion.
             </p>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {[
-                { name: 'Friday Chalele', title: 'Trustee', desc: 'Strategic Oversight & National Community Engagement' },
-                { name: 'Doris Bode', title: 'Trustee', desc: 'Counseling Coordination & Family Welfare Advocacy' },
-                { name: 'Steve Ahans', title: 'Trustee', desc: 'Institutional Partnerships & Inter-Agency Liaison' },
-                { name: 'Praise Ohwojero Efe', title: 'Trustee', desc: 'School Educational Outreaches & Youth Assemblies' },
-                { name: 'Anthony Odianosen Donald', title: 'Trustee', desc: 'Policy Research, Advocacy & Legal Compliance' },
-                { name: 'Prosper Ohwojero', title: 'Trustee & Sports Director', desc: 'SIDAAP Football Academy & Youth Athletic Programs' },
-              ].map((leader) => (
-                <div key={leader.name} className="p-5 rounded-2xl bg-white/5 border border-white/10 hover:border-[#c9ec63]/50 transition">
-                  <div className="h-10 w-10 rounded-xl bg-[#c9ec63] text-[#13231f] flex items-center justify-center font-black text-sm mb-3">
-                    {leader.name[0]}
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {leaders.map((leader) => (
+                <article key={leader.name} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]">
+                  <div className="relative h-52 bg-[#0c1614]">
+                    {leader.image ? (
+                      <img src={leader.image} alt={leader.name} className="h-full w-full object-cover object-top" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#c9ec63]/50 bg-[#c9ec63] text-2xl font-black text-[#13231f]">
+                          {leader.initials}
+                        </div>
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0c1614] to-transparent" />
                   </div>
-                  <h4 className="text-base font-bold text-white">{leader.name}</h4>
-                  <span className="text-[11px] font-mono text-[#c9ec63] uppercase tracking-wider block mt-0.5">
-                    {leader.title}
-                  </span>
-                  <p className="text-xs text-[#a9b9a8] mt-2 leading-relaxed">
-                    {leader.desc}
-                  </p>
-                </div>
+                  <div className="p-5">
+                    <h3 className="text-lg font-bold text-white">{leader.name}</h3>
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-[#c9ec63]">
+                      {leader.role}
+                    </p>
+                    <p className="mt-3 border-t border-white/10 pt-3 text-xs leading-relaxed text-[#b6c4b9]">
+                      {leader.description}
+                    </p>
+                  </div>
+                </article>
               ))}
             </div>
           </div>

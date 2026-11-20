@@ -24,8 +24,7 @@ import { AuthUser, getUserRegistry, registerUser } from '@/lib/auth/session'
 export async function syncUserToSupabase(user: AuthUser): Promise<void> {
   const supabase = createClient()
   if (!supabase) return
-  try {
-    await supabase.from('users').upsert({
+  const { error } = await supabase.from('users').upsert({
       id: user.id,
       name: user.name,
       email: user.email,
@@ -39,9 +38,7 @@ export async function syncUserToSupabase(user: AuthUser): Promise<void> {
       avatar_initials: user.avatarInitials,
       avatar_url: user.avatarUrl || null
     }, { onConflict: 'id' })
-  } catch (err) {
-    console.error('[sidaap:portal] syncUserToSupabase error', err)
-  }
+  if (error) throw error
 }
 
 export async function fetchUsersFromSupabase(): Promise<AuthUser[]> {
@@ -151,15 +148,15 @@ export async function deleteDirector(directorId: string, email: string): Promise
 }
 
 export async function addDirector(director: StateDirector, user: AuthUser): Promise<void> {
-  // 1. Save locally immediately
+  // Persist the login account locally before reporting the appointment as successful.
+  registerUser(user)
+
   const current = getStoredDirectors()
   saveStoredDirectors([director, ...current])
-  registerUser(user)
 
   const supabase = createClient()
   if (!supabase) return
-  try {
-    await supabase.from('state_directors').upsert({
+  const { error } = await supabase.from('state_directors').upsert({
       id: director.id,
       name: director.name,
       email: director.email,
@@ -174,11 +171,9 @@ export async function addDirector(director: StateDirector, user: AuthUser): Prom
       outreach_count: director.outreachCount,
       avatar_url: director.avatarUrl || null
     }, { onConflict: 'id' })
+  if (error) throw error
 
-    await syncUserToSupabase(user)
-  } catch (err) {
-    console.error('[sidaap:portal] addDirector error', err)
-  }
+  await syncUserToSupabase(user)
 }
 
 // ── State Staff ───────────────────────────────────────────────────────────────
@@ -200,6 +195,7 @@ export async function fetchStaff(): Promise<StateStaffMember[]> {
       state: s.state,
       lga: s.lga,
       city: s.city ?? '',
+      memberType: s.member_type ?? 'Staff',
       roleTitle: s.role_title,
       joinedDate: s.joined_date,
       assignedDirector: s.assigned_director,
@@ -227,6 +223,7 @@ export async function updateStaffMember(member: StateStaffMember): Promise<void>
       phone: member.phone || null,
       lga: member.lga,
       city: member.city || null,
+      member_type: member.memberType,
       role_title: member.roleTitle,
       status: member.status,
       avatar_url: member.avatarUrl || null
@@ -276,6 +273,7 @@ export async function addStaffMember(member: StateStaffMember, user: AuthUser): 
       state: member.state,
       lga: member.lga,
       city: member.city || null,
+      member_type: member.memberType,
       role_title: member.roleTitle,
       joined_date: member.joinedDate,
       assigned_director: member.assignedDirector,

@@ -71,7 +71,7 @@ create policy "Allow message status updates"
 -- ── 5. OFFICIAL CHANNEL REGISTRY (NO DUMMY MESSAGES) ─────────────────────────
 insert into public.chat_rooms (id, name, type, description, state, avatar_text, avatar_color)
 values
-  ('room-public-inquiries',    '🌐 Live Public Crisis & Citizen Help Desk',       'broadcast',   'Incoming live messages & WhatsApp inquiries from citizens, parents, and youth on the public website', null, 'SOS', 'bg-[#c9ec63] text-[#13231f]'),
+  ('room-public-inquiries',    '🌐 Live Public Crisis & Citizen Help Desk',       'broadcast',   'Incoming live messages from citizens, parents, and youth on the public website', null, 'SOS', 'bg-[#c9ec63] text-[#13231f]'),
   ('room-directors-executive', '🏛️ National Directors Executive Forum',            'broadcast',   'Private coordination channel for National Trustees, Executive Director, and all 36 State Directors', null, 'NAT', 'bg-[#13231f]'),
   ('room-national-broadcast',  '📢 National Directives & Announcements',          'broadcast',   'Official policy broadcasts from the National Secretariat to all state chapters', null, 'HQ', 'bg-emerald-800'),
   ('room-lagos-chapter',       '📍 Lagos State Operations & Volunteers',           'state_group', 'Lagos State Directorate, LGA representatives, school liaison and volunteer team', 'Lagos', 'LAG', 'bg-amber-800'),

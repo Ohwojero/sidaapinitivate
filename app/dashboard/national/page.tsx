@@ -41,7 +41,8 @@ import {
   Copy,
   Pencil,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  UserRoundCog,
 } from 'lucide-react'
 
 export default function NationalDirectorDashboard() {
@@ -55,6 +56,8 @@ export default function NationalDirectorDashboard() {
 
   // Modals
   const [showAddDirectorModal, setShowAddDirectorModal] = useState(false)
+  const [isCreatingDirector, setIsCreatingDirector] = useState(false)
+  const [directorCreationError, setDirectorCreationError] = useState('')
   const [showBroadcastModal, setShowBroadcastModal] = useState(false)
   const [editingDirector, setEditingDirector] = useState<StateDirector | null>(null)
   const [deletingDirector, setDeletingDirector] = useState<StateDirector | null>(null)
@@ -97,8 +100,10 @@ export default function NationalDirectorDashboard() {
   const availableDirectorLgas = NIGERIA_STATES.find(s => s.name === newDirector.state)?.lgas || []
 
   // Add State Director Handler
-  const handleAddDirector = (e: React.FormEvent) => {
+  const handleAddDirector = async (e: React.FormEvent) => {
     e.preventDefault()
+    setIsCreatingDirector(true)
+    setDirectorCreationError('')
     const password = newDirector.password || 'sidaap2026'
     const created: StateDirector = {
       id: `dir-${Date.now()}`,
@@ -115,8 +120,6 @@ export default function NationalDirectorDashboard() {
       outreachCount: 0,
       avatarUrl: newDirector.avatarUrl || undefined
     }
-    setDirectors(prev => [created, ...prev])
-
     const newUser = {
       id: `user-${created.id}`,
       name: created.name,
@@ -130,18 +133,29 @@ export default function NationalDirectorDashboard() {
       avatarInitials: created.name.split(' ').map(n => n[0]).join('').slice(0, 2),
       avatarUrl: created.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80'
     }
-    addDirector(created, newUser)
 
-    // Show credential notification
-    setCreatedCredentialsNotice({
-      name: created.name,
-      email: created.email,
-      password: password,
-      state: created.state
-    })
+    try {
+      await addDirector(created, newUser)
+      setDirectors(prev => [created, ...prev])
+      setCreatedCredentialsNotice({
+        name: created.name,
+        email: created.email,
+        password,
+        state: created.state
+      })
 
-    setShowAddDirectorModal(false)
-    setNewDirector({ name: '', email: '', password: 'sidaap2026', phone: '', state: 'Katsina', lga: '', city: '', avatarUrl: '' })
+      setShowAddDirectorModal(false)
+      setNewDirector({ name: '', email: '', password: 'sidaap2026', phone: '', state: 'Katsina', lga: '', city: '', avatarUrl: '' })
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Unable to save the director account.'
+      setDirectorCreationError(`The appointment could not be fully saved. Please try again. ${message}`)
+    } finally {
+      setIsCreatingDirector(false)
+    }
   }
 
   // Edit Director Handler
@@ -196,21 +210,18 @@ export default function NationalDirectorDashboard() {
 
   return (
     <div className="bg-[#f5f1e9] min-h-screen pb-20">
-      {/* National Banner */}
-      <div className="bg-[#13231f] text-white px-6 py-6 border-b border-white/10">
+      {/* National overview */}
+      <div className="border-b border-[#18312a]/10 bg-white px-6 py-7">
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-[#c9ec63] animate-pulse" />
-              <span className="font-mono text-xs uppercase tracking-widest text-[#c9ec63] font-bold">
-                National Executive Directorate &bull; Abuja HQ
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
-              National Affairs &amp; State Oversight Command
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#52720e]">
+              National office &bull; Abuja
+            </span>
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-[#18312a]">
+              National oversight
             </h1>
-            <p className="text-xs text-[#b6c4b9]">
-              Logged in as <strong>Dr. Friday Chalele (National Trustee)</strong> &bull; Full administrative jurisdiction over 36 States + FCT.
+            <p className="mt-1 text-sm text-[#718079]">
+              State leadership, LGA teams, programmes and national directives.
             </p>
           </div>
 
@@ -278,7 +289,7 @@ export default function NationalDirectorDashboard() {
         </div>
 
         {/* SECTION 1: APPOINTED STATE DIRECTORS (NATIONAL ONLY CAN ADD!) */}
-        <div className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm">
+        <div id="state-directors" className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm scroll-mt-24">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
             <div>
               <span className="font-mono text-xs uppercase font-bold text-blue-800">
@@ -389,15 +400,18 @@ export default function NationalDirectorDashboard() {
           </div>
         </div>
 
-        {/* SECTION 2: MASTER LOCAL STAFF & MEMBERS REGISTRY (NATIONAL SEES ALL!) */}
-        <div className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm">
+        {/* SECTION 2: MASTER LOCAL STAFF & MEMBERS REGISTRY (NATIONAL SEES ALL — READ ONLY) */}
+        <div id="lga-members" className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm scroll-mt-24">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
             <div>
-              <span className="font-mono text-xs uppercase font-bold text-amber-800">
+              <a
+                href="#lga-members"
+                className="inline-block rounded-lg font-mono text-xs uppercase font-bold text-amber-800 hover:text-amber-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+              >
                 National Register of 774 LGAs
-              </span>
+              </a>
               <h2 className="text-2xl font-bold text-stone-900 mt-1">
-                All Local Staff &amp; Members Across States
+                All Local Members &amp; Staff Across States
               </h2>
               <p className="text-xs text-stone-500">
                 Whenever any State Director adds a staff member or local volunteer, they appear here instantly.
@@ -436,6 +450,7 @@ export default function NationalDirectorDashboard() {
                   <th className="py-3 px-4">Member Name</th>
                   <th className="py-3 px-4">State &bull; LGA</th>
                   <th className="py-3 px-4">City / Town</th>
+                  <th className="py-3 px-4">Type</th>
                   <th className="py-3 px-4">Role Title</th>
                   <th className="py-3 px-4">Phone</th>
                   <th className="py-3 px-4">Reporting State Director</th>
@@ -455,6 +470,11 @@ export default function NationalDirectorDashboard() {
                     </td>
                     <td className="py-4 px-4 font-medium text-stone-700">
                       {staff.city}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${staff.memberType === 'Staff' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {staff.memberType || 'Staff'}
+                      </span>
                     </td>
                     <td className="py-4 px-4">
                       <span className="rounded-lg bg-stone-100 text-stone-800 px-2.5 py-1 text-[11px] font-bold">
@@ -690,12 +710,18 @@ export default function NationalDirectorDashboard() {
               </div>
 
               <div className="pt-2">
+                {directorCreationError && (
+                  <p role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+                    {directorCreationError}
+                  </p>
+                )}
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1d3730] text-white py-3 text-xs font-bold uppercase tracking-wider transition shadow"
+                  disabled={isCreatingDirector}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1d3730] text-white py-3 text-xs font-bold uppercase tracking-wider transition shadow disabled:cursor-wait disabled:opacity-60"
                 >
                   <ShieldCheck className="h-4 w-4 text-[#c9ec63]" />
-                  Issue Statutory Appointment
+                  {isCreatingDirector ? 'Saving Appointment...' : 'Issue Statutory Appointment'}
                 </button>
               </div>
             </form>

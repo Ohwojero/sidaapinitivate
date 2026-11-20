@@ -162,7 +162,7 @@ export function getStoredUser(): AuthUser | null {
     const raw = localStorage.getItem(SESSION_KEY)
     if (raw) return JSON.parse(raw)
   } catch { /* ignore */ }
-  return DEMO_ACCOUNTS[0]
+  return null
 }
 
 export function saveStoredUser(user: AuthUser): void {
@@ -201,7 +201,7 @@ export function getUserRegistry(): AuthUser[] {
 
 function saveUserRegistry(users: AuthUser[]): void {
   if (typeof window === 'undefined') return
-  try { localStorage.setItem(REGISTRY_KEY, JSON.stringify(users)) } catch { /* ignore */ }
+  localStorage.setItem(REGISTRY_KEY, JSON.stringify(users))
 }
 
 // ── Register / upsert a user — saves to Supabase AND local cache ──────────────
@@ -230,19 +230,27 @@ export function registerUser(newUser: AuthUser): void {
     phone: newUser.phone || null,
     avatar_initials: newUser.avatarInitials,
     avatar_url: newUser.avatarUrl || null
-  }, { onConflict: 'id' }).then(({ error }) => {
+  }, { onConflict: 'id' }).then(({ error }: { error: unknown }) => {
     if (error) console.error('[sidaap:session] registerUser supabase error', error)
   })
 }
 
-// ── Authenticate — checks Supabase first, falls back to local cache ───────────
+// ── Authenticate — checks local cache first, then Supabase as fallback ───────
 export async function authenticateUser(
   email: string,
   password?: string
 ): Promise<{ success: boolean; user?: AuthUser; message?: string }> {
   const cleanEmail = email.trim().toLowerCase()
 
-  // 1. Try Supabase
+  // 1. Check local registry first — this includes all newly appointed directors
+  //    and staff added during this session (registered via registerUser() immediately).
+  const registry = getUserRegistry()
+  const localMatch = registry.find(u => u.email.toLowerCase() === cleanEmail)
+  if (localMatch) {
+    return validatePassword(localMatch, password)
+  }
+
+  // 2. Try Supabase as fallback (for accounts created in a different browser/session)
   const supabase = createClient()
   if (supabase) {
     try {
@@ -267,7 +275,7 @@ export async function authenticateUser(
           avatarInitials: data.avatar_initials,
           avatarUrl: data.avatar_url ?? ''
         }
-        // Cache locally
+        // Cache locally so future logins are instant
         registerUser(user)
         return validatePassword(user, password)
       }
@@ -276,16 +284,11 @@ export async function authenticateUser(
     }
   }
 
-  // 2. Fallback to local cache
-  const registry = getUserRegistry()
-  const matched = registry.find(u => u.email.toLowerCase() === cleanEmail)
-  if (!matched) {
-    return {
-      success: false,
-      message: 'No authorized account found with this email. State Directors must be appointed by National Directorate, and staff/members must be enrolled by their State Director.'
-    }
+  // 3. Not found anywhere
+  return {
+    success: false,
+    message: 'No authorized account found with this email. State Directors must be appointed by National Directorate, and staff/members must be enrolled by their State Director.'
   }
-  return validatePassword(matched, password)
 }
 
 function validatePassword(

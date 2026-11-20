@@ -24,6 +24,7 @@ export interface StateStaffMember {
   state: string
   lga: string
   city: string
+  memberType: 'Member' | 'Staff'
   roleTitle: 'Field Officer' | 'School Liaison' | 'Youth Coach' | 'Counselor' | 'Volunteer'
   joinedDate: string
   assignedDirector: string
@@ -323,6 +324,7 @@ export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
     state: 'Abuja (FCT)',
     lga: 'Municipal Area Council (AMAC)',
     city: 'Wuse & Garki',
+    memberType: 'Staff',
     roleTitle: 'School Liaison',
     joinedDate: 'April 2025',
     assignedDirector: 'Dr. Friday Chalele',
@@ -337,6 +339,7 @@ export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
     state: 'Lagos',
     lga: 'Ikeja',
     city: 'Ikeja & Maryland',
+    memberType: 'Member',
     roleTitle: 'Counselor',
     joinedDate: 'May 2025',
     assignedDirector: 'Engr. Babatunde Sanusi',
@@ -351,6 +354,7 @@ export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
     state: 'Lagos',
     lga: 'Alimosho',
     city: 'Egbeda / Igando',
+    memberType: 'Member',
     roleTitle: 'Field Officer',
     joinedDate: 'June 2025',
     assignedDirector: 'Engr. Babatunde Sanusi',
@@ -365,6 +369,7 @@ export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
     state: 'Delta',
     lga: 'Warri South',
     city: 'Warri Urban',
+    memberType: 'Member',
     roleTitle: 'Youth Coach',
     joinedDate: 'June 2025',
     assignedDirector: 'Prosper Ohwojero',
@@ -379,6 +384,7 @@ export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
     state: 'Kano',
     lga: 'Kano Municipal',
     city: 'Kano Sabon Gari',
+    memberType: 'Staff',
     roleTitle: 'Field Officer',
     joinedDate: 'July 2025',
     assignedDirector: 'Mallam Ibrahim Danbatta',
@@ -393,6 +399,7 @@ export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
     state: 'Rivers',
     lga: 'Port Harcourt',
     city: 'D/Line, Port Harcourt',
+    memberType: 'Staff',
     roleTitle: 'Counselor',
     joinedDate: 'August 2025',
     assignedDirector: 'Dr. (Mrs) Ngozi Amadi',
@@ -406,7 +413,7 @@ export const INITIAL_CHAT_ROOMS: ChatRoom[] = [
     id: 'room-public-inquiries',
     name: '🌐 Live Public Crisis & Citizen Help Desk',
     type: 'broadcast',
-    description: 'Incoming live messages & WhatsApp inquiries from citizens, parents, and youth on the public website',
+    description: 'Incoming live messages from citizens, parents, and youth on the public website',
     unreadCount: 0,
     lastMessage: 'Channel active',
     lastTime: '',

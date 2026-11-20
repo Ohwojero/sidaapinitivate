@@ -1,229 +1,427 @@
+'use client'
+
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
-  GraduationCap,
-  Trophy,
-  Users2,
-  HeartHandshake,
-  Award,
-  Megaphone,
-  BookOpen,
+  CalendarDays,
+  MapPin,
+  CheckCircle2,
+  Clock,
+  Search,
+  Sparkles,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
-  Calendar
+  ImageIcon,
+  X,
+  ChevronRight,
+  ExternalLink
 } from 'lucide-react'
-
-export const metadata = {
-  title: 'Programs & Initiatives — SIDAAP Nigeria',
-  description: 'School awareness campaigns, SIDAAP Football Academy Ltd, community rallies, counseling support, and professional training.',
-}
-
-const programsList = [
-  {
-    id: 'school-awareness',
-    category: 'Education & Schools',
-    title: 'Secondary School Outreach & Exercise Book Campaign',
-    tagline: 'Educating young minds before experimentation starts.',
-    icon: GraduationCap,
-    description: 'Direct interactive workshops held in secondary schools across Nigerian states. We educate students on the real physiological dangers of synthetic substances like Colorado, Mkpuru Mmiri, and Tramadol. To reinforce the message every day in the classroom, SIDAAP manufactures and distributes free branded anti-drug exercise books directly to students.',
-    highlights: [
-      'Interactive student Q&A assemblies with real-life survivor testimonials',
-      'Free distribution of custom anti-drug 60-leaves exercise books',
-      'Formation of school-based peer Drug-Free Clubs',
-      'Training teachers to identify early behavioral warning signs'
-    ],
-    badge: 'Flagship Initiative'
-  },
-  {
-    id: 'football-academy',
-    category: 'Youth Empowerment & Sports',
-    title: 'SIDAAP Football Academy Ltd (RC: 9864105)',
-    tagline: 'Developing today’s athletic talent for tomorrow’s leaders.',
-    icon: Trophy,
-    description: 'Incorporated under CAMA 2020 as an official athletic development subsidiary, the SIDAAP Football Academy provides structured training, discipline, character education, and scouting opportunities for talented youth in vulnerable communities. By channeling energy, focus, and passion into professional sport, we keep vulnerable boys and girls off the streets.',
-    highlights: [
-      'Professional coaching staff, official team kits, and training camps',
-      'Zero-tolerance drug testing and mandatory health education',
-      'Scouting showcases, regional tournament competitions, and mentorship',
-      'Led by Trustee & Sports Director Prosper Ohwojero (#7 SIDAAP Kit)'
-    ],
-    badge: 'CAC Incorporated'
-  },
-  {
-    id: 'community-rallies',
-    category: 'Grassroots Advocacy',
-    title: 'Community & Market Sensitization Marches',
-    tagline: 'Mobilising streets, motor parks, and local markets.',
-    icon: Megaphone,
-    description: 'Grassroots street walks and market rallies conducted in partnership with NDLEA field officers, state police commands, and community youth associations. We distribute flyers, display awareness placards in indigenous languages, and engage transport unions, market women, and street leaders.',
-    highlights: [
-      'Multi-stakeholder anti-drug street processions with audio broadcast trucks',
-      'Distribution of localized flyers breaking down legal penalties and dangers',
-      'Direct engagement with motor park unions (NURTW) and market executives',
-      'Establishment of local neighborhood alert monitors'
-    ],
-    badge: 'Community Mobilisation'
-  },
-  {
-    id: 'counseling-rehab',
-    category: 'Clinical Care & Recovery',
-    title: 'Counseling & Rehabilitation Support Network',
-    tagline: 'A compassionate, non-punitive path to full recovery.',
-    icon: HeartHandshake,
-    description: 'Through our 24/7 helplines and state desks, SIDAAP provides confidential telephone crisis support, family counseling, and direct referral pathways to accredited psychiatric and rehabilitation centers across Nigeria. We believe addiction is a medical sickness, not a moral failure.',
-    highlights: [
-      '24/7 confidential helplines (0806 343 0562 & 0802 853 1259)',
-      'Free telephone triage and assessment by trained counselors',
-      'Warm handover and admission support to verified partner rehab centers',
-      'Post-detoxification aftercare monitoring and family support groups'
-    ],
-    badge: 'Confidential Service'
-  },
-  {
-    id: 'training-institute',
-    category: 'Professional Capacity',
-    title: 'Chartered Institute of Drug Prevention & Crime Reduction',
-    tagline: 'Building certified frontline prevention leaders.',
-    icon: Award,
-    description: 'Trademark accepted under Class 41 (NG/TM/O/2026/472454), this specialized institute delivers structured curricula for youth leaders, teachers, faith leaders, and NGO field officers on modern evidence-based substance abuse prevention and crime mitigation.',
-    highlights: [
-      'Accredited certification courses in substance abuse prevention counseling',
-      'Workshops on community crime mitigation and youth behavioral de-escalation',
-      'Annual national drug demand reduction summits',
-      'Research and policy publications on Nigerian drug prevalence trends'
-    ],
-    badge: 'Trademark Accepted'
-  }
-]
+import {
+  ProgramActivity,
+  getStoredPrograms
+} from '@/lib/data/programs-data'
 
 export default function ProgramsPage() {
+  const [programs, setPrograms] = useState<ProgramActivity[]>([])
+  const [tabFilter, setTabFilter] = useState<'all' | 'past' | 'upcoming'>('all')
+  const [categoryFilter, setCategoryFilter] = useState<string>('all')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedProgram, setSelectedProgram] = useState<ProgramActivity | null>(null)
+  const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
+
+  useEffect(() => {
+    setPrograms(getStoredPrograms())
+    const handleUpdate = () => {
+      setPrograms(getStoredPrograms())
+    }
+    window.addEventListener('sidaap_programs_updated', handleUpdate)
+    return () => window.removeEventListener('sidaap_programs_updated', handleUpdate)
+  }, [])
+
+  // All distinct categories
+  const categories = Array.from(new Set(programs.map((p) => p.category)))
+
+  // Filtered programs
+  const filtered = programs.filter((p) => {
+    const matchesTab =
+      tabFilter === 'all'
+        ? true
+        : tabFilter === 'past'
+        ? p.status === 'past'
+        : p.status === 'upcoming' || p.status === 'ongoing'
+
+    const matchesCategory =
+      categoryFilter === 'all' || p.category === categoryFilter
+
+    const matchesSearch =
+      searchQuery.trim() === '' ||
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.state.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.location.toLowerCase().includes(searchQuery.toLowerCase())
+
+    return matchesTab && matchesCategory && matchesSearch
+  })
+
+  const pastCount = programs.filter((p) => p.status === 'past').length
+  const upcomingCount = programs.filter((p) => p.status === 'upcoming' || p.status === 'ongoing').length
+
   return (
-    <div className="bg-[#f5f1e9] min-h-screen">
-      {/* Hero Header */}
-      <section className="relative bg-[#13231f] text-[#f5f1e9] py-20 px-6 lg:px-10 overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(201,236,99,.15)_1px,transparent_1px),linear-gradient(90deg,rgba(201,236,99,.15)_1px,transparent_1px)] [background-size:48px_48px]" />
+    <div className="bg-[#f7f5f0] min-h-screen text-[#13231f] font-sans">
+      {/* ── HERO BANNER ── */}
+      <section className="relative bg-[#13231f] text-[#f5f1e9] py-16 sm:py-24 px-6 lg:px-12 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 opacity-15 [background-image:radial-gradient(#c9ec63_1px,transparent_1px)] [background-size:24px_24px]" />
 
-        <div className="relative mx-auto max-w-7xl">
-          <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[#c9ec63] mb-4">
-            <span className="h-1.5 w-8 bg-[#c9ec63]" />
-            Action On The Ground
+        <div className="relative mx-auto max-w-6xl">
+          <div className="flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[#c9ec63] mb-3">
+            <span className="h-1.5 w-6 bg-[#c9ec63] rounded-full" />
+            Direct Field Impact &bull; 36 States + FCT
           </div>
-          <h1 className="text-4xl sm:text-6xl font-bold tracking-tight text-white max-w-4xl">
-            Our Programs &amp; Initiatives
+
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white max-w-3xl leading-tight">
+            Programs &amp; Activities
           </h1>
-          <p className="mt-6 max-w-2xl text-base sm:text-lg text-[#b6c4b9] leading-relaxed">
-            From secondary school classrooms and sports football academies to market street marches and clinical triage, explore how SIDAAP intervenes at every stage of the prevention lifecycle.
+
+          <p className="mt-4 max-w-2xl text-sm sm:text-base text-[#b6c4b9] leading-relaxed">
+            Browse through our past completed outreaches and upcoming programs across secondary schools, youth athletic academies, market rallies, and rehabilitation centers across Nigeria.
           </p>
-        </div>
-      </section>
 
-      {/* Programs List */}
-      <section className="mx-auto max-w-7xl px-6 py-16 lg:px-8 space-y-12">
-
-        {/* Parallax Break before programs */}
-        <div
-          className="rounded-3xl overflow-hidden relative py-20 bg-fixed bg-center bg-cover text-white shadow-xl"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1543357480-c60d40a4ecca?auto=format&fit=crop&w=1920&q=80')` }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#0c1614]/80 via-[#13231f]/50 to-[#0c1614]/80" />
-          <div className="relative z-10 mx-auto max-w-4xl px-8 text-center space-y-4">
-            <span className="font-mono text-xs uppercase tracking-widest text-[#c9ec63] font-bold">SIDAAP In Action · Nationwide</span>
-            <h2 className="text-3xl sm:text-5xl font-bold tracking-tight text-white leading-tight">
-              Seven Pillars of Drug Abuse Prevention
-            </h2>
-            <p className="text-sm sm:text-base text-[#d1d9cf] max-w-xl mx-auto leading-relaxed">
-              Targeted, evidence-based interventions covering schools, communities, sports, counseling, training, and law-enforcement collaboration across all 36 Nigerian states.
-            </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1 text-xs text-[#c9ec63] border border-white/10 font-mono">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              {pastCount} Completed Past Activities
+            </span>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3.5 py-1 text-xs text-amber-300 border border-white/10 font-mono">
+              <Clock className="h-3.5 w-3.5" />
+              {upcomingCount} Upcoming / Scheduled Programs
+            </span>
           </div>
         </div>
-
-        {programsList.map((prog, index) => {
-          const Icon = prog.icon
-          const isEven = index % 2 === 1
-
-          return (
-            <div
-              key={prog.id}
-              className={`rounded-3xl border border-stone-200 bg-white p-8 sm:p-12 shadow-sm flex flex-col ${
-                isEven ? 'lg:flex-row-reverse' : 'lg:flex-row'
-              } gap-10 items-stretch justify-between`}
-            >
-              <div className="flex-1 flex flex-col justify-between">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="rounded-full bg-[#13231f] text-[#c9ec63] px-3 py-1 text-[11px] font-mono uppercase tracking-wider font-bold">
-                      {prog.badge}
-                    </span>
-                    <span className="text-xs font-semibold uppercase tracking-wider text-stone-500">
-                      {prog.category}
-                    </span>
-                  </div>
-
-                  <h3 className="text-2xl sm:text-3xl font-bold text-stone-900 mt-2">
-                    {prog.title}
-                  </h3>
-
-                  <p className="mt-2 text-sm font-serif italic text-emerald-800">
-                    &ldquo;{prog.tagline}&rdquo;
-                  </p>
-
-                  <p className="mt-4 text-xs sm:text-sm text-stone-600 leading-relaxed">
-                    {prog.description}
-                  </p>
-
-                  <div className="mt-6 space-y-2.5">
-                    <span className="font-mono text-xs uppercase tracking-wider text-stone-800 font-bold block mb-1">
-                      Key Outcomes &amp; Activities:
-                    </span>
-                    {prog.highlights.map((item) => (
-                      <div key={item} className="flex items-start gap-2.5 text-xs text-stone-700">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
-                        <span>{item}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-stone-100 flex flex-wrap items-center gap-4">
-                  <Link
-                    href="/contact"
-                    className="flex items-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1d3730] text-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition"
-                  >
-                    Bring to Your Community <ArrowRight className="h-3.5 w-3.5 text-[#c9ec63]" />
-                  </Link>
-                  <Link
-                    href="/credentials"
-                    className="text-xs font-bold uppercase tracking-wider text-stone-600 hover:text-stone-900 underline"
-                  >
-                    View Official Registrations
-                  </Link>
-                </div>
-              </div>
-
-              {/* Visual Card / Highlights */}
-              <div className="lg:w-80 rounded-2xl bg-gradient-to-br from-[#13231f] to-[#1c3831] p-8 text-white flex flex-col justify-between shadow-md">
-                <div>
-                  <div className="h-14 w-14 rounded-2xl bg-[#c9ec63] text-[#13231f] flex items-center justify-center mb-6">
-                    <Icon className="h-7 w-7" />
-                  </div>
-                  <span className="font-mono text-xs uppercase tracking-widest text-[#c9ec63]">
-                    National Movement
-                  </span>
-                  <h4 className="text-xl font-bold mt-1 text-white">SIDAAP Nigeria</h4>
-                  <p className="text-xs text-[#b6c4b9] mt-3 leading-relaxed">
-                    Active in Nigerian secondary schools, sports leagues, and communities. Dedicated to protecting potential and saving youth destinies.
-                  </p>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-white/10">
-                  <span className="text-[11px] font-mono text-[#c9ec63] block font-bold">Free Helpline:</span>
-                  <span className="text-sm font-mono font-bold text-white">0806 343 0562</span>
-                </div>
-              </div>
-            </div>
-          )
-        })}
       </section>
+
+      {/* ── FILTER & CONTROLS ── */}
+      <section className="sticky top-0 z-30 bg-[#f7f5f0]/95 backdrop-blur-md border-b border-stone-200 py-4 px-6 lg:px-12 shadow-sm">
+        <div className="mx-auto max-w-6xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          {/* Timing Filter Tabs */}
+          <div className="flex items-center gap-2 bg-stone-200/70 p-1.5 rounded-2xl shrink-0">
+            <button
+              onClick={() => setTabFilter('all')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition ${
+                tabFilter === 'all'
+                  ? 'bg-[#13231f] text-white shadow'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              All Activities ({programs.length})
+            </button>
+            <button
+              onClick={() => setTabFilter('past')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 ${
+                tabFilter === 'past'
+                  ? 'bg-emerald-700 text-white shadow'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <span>Past Programs</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">{pastCount}</span>
+            </button>
+            <button
+              onClick={() => setTabFilter('upcoming')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 ${
+                tabFilter === 'upcoming'
+                  ? 'bg-amber-600 text-white shadow'
+                  : 'text-stone-600 hover:text-stone-900'
+              }`}
+            >
+              <span>Upcoming Programs</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">{upcomingCount}</span>
+            </button>
+          </div>
+
+          {/* Search Box & Category Filter */}
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <div className="relative flex-1 md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-stone-400" />
+              <input
+                type="text"
+                placeholder="Search programs, state, keywords..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-white text-xs pl-9 pr-3 py-2 rounded-xl border border-stone-300 outline-none focus:border-[#13231f]"
+              />
+            </div>
+
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="bg-white text-xs px-3 py-2 rounded-xl border border-stone-300 outline-none focus:border-[#13231f]"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </section>
+
+      {/* ── PROGRAM CARDS FEED ── */}
+      <section className="mx-auto max-w-6xl px-6 py-12 lg:px-12">
+        {filtered.length === 0 ? (
+          <div className="p-16 text-center rounded-3xl bg-white border border-stone-200 shadow-sm space-y-3">
+            <CalendarDays className="h-12 w-12 text-stone-300 mx-auto" />
+            <h3 className="text-base font-bold text-stone-800">No programs found</h3>
+            <p className="text-xs text-stone-500 max-w-sm mx-auto">
+              No activities match your current filter. Try selecting &quot;All Activities&quot; or clearing your search query.
+            </p>
+            <button
+              onClick={() => {
+                setTabFilter('all')
+                setCategoryFilter('all')
+                setSearchQuery('')
+              }}
+              className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#13231f] text-white text-xs font-bold"
+            >
+              Reset Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filtered.map((item) => {
+              const isPast = item.status === 'past'
+              return (
+                <article
+                  key={item.id}
+                  onClick={() => {
+                    setSelectedProgram(item)
+                    setActiveGalleryIndex(0)
+                  }}
+                  className="rounded-3xl bg-white border border-stone-200 shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col cursor-pointer group hover:-translate-y-1"
+                >
+                  {/* Photo Container */}
+                  <div className="relative h-56 w-full bg-stone-900 overflow-hidden">
+                    <img
+                      src={item.mainImage}
+                      alt={item.title}
+                      className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                    {/* Timing Status Pill */}
+                    <div className="absolute top-3.5 left-3.5">
+                      <span
+                        className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-md ${
+                          isPast
+                            ? 'bg-emerald-600 text-white'
+                            : 'bg-amber-500 text-stone-950 font-black'
+                        }`}
+                      >
+                        {isPast ? <CheckCircle2 className="h-3 w-3" /> : <Clock className="h-3 w-3" />}
+                        <span>{isPast ? 'Past Activity' : 'Upcoming Program'}</span>
+                      </span>
+                    </div>
+
+                    {/* Category */}
+                    <div className="absolute top-3.5 right-3.5">
+                      <span className="px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-white text-[10px] font-mono border border-white/20">
+                        {item.category}
+                      </span>
+                    </div>
+
+                    {/* Bottom overlay info */}
+                    <div className="absolute bottom-3 left-3.5 right-3.5 flex items-center justify-between text-xs text-white">
+                      <span className="flex items-center gap-1 font-mono text-[11px] bg-black/60 px-2 py-0.5 rounded-lg backdrop-blur-sm">
+                        <MapPin className="h-3 w-3 text-[#c9ec63]" />
+                        {item.state}
+                      </span>
+                      <span className="font-mono text-[11px] bg-black/60 px-2 py-0.5 rounded-lg backdrop-blur-sm">
+                        📅 {item.date}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Text Details */}
+                  <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="text-base font-bold text-stone-900 group-hover:text-emerald-800 transition-colors leading-snug">
+                        {item.title}
+                      </h3>
+
+                      <p className="text-xs text-stone-600 line-clamp-3 leading-relaxed">
+                        {item.description}
+                      </p>
+
+                      <div className="pt-2 text-[11px] text-stone-400 font-mono flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5 text-stone-400 shrink-0" />
+                        <span className="truncate">{item.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Highlights bullet preview */}
+                    {item.highlights && item.highlights.length > 0 && (
+                      <div className="pt-3 border-t border-stone-100">
+                        <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-bold block mb-1">
+                          Key Achievements:
+                        </span>
+                        <ul className="text-xs text-stone-700 space-y-1">
+                          {item.highlights.slice(0, 2).map((h, i) => (
+                            <li key={i} className="flex items-start gap-1.5 truncate">
+                              <span className="text-emerald-600 font-bold">•</span>
+                              <span className="truncate">{h}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    <div className="pt-2 flex items-center justify-between text-xs font-bold text-emerald-800">
+                      <span>View Photos &amp; Full Story</span>
+                      <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </article>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* ── DETAIL MODAL WITH PHOTO GALLERY ── */}
+      {selectedProgram && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="relative w-full max-w-3xl max-h-[92vh] rounded-3xl bg-white shadow-2xl overflow-hidden flex flex-col text-[#13231f]">
+            {/* Modal Header */}
+            <div className="p-5 bg-[#13231f] text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`px-3 py-1 rounded-full text-[10px] font-mono font-bold uppercase tracking-wider ${
+                    selectedProgram.status === 'past'
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-amber-500 text-stone-900'
+                  }`}
+                >
+                  {selectedProgram.status === 'past' ? 'Past Activity (Completed)' : 'Upcoming / Ongoing Program'}
+                </span>
+                <span className="text-xs text-[#a9b9a8]">•</span>
+                <span className="text-xs text-[#c9ec63] font-mono">{selectedProgram.category}</span>
+              </div>
+
+              <button
+                onClick={() => setSelectedProgram(null)}
+                className="p-1.5 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto space-y-6 flex-1 text-sm">
+              {/* Photo Display */}
+              <div>
+                {(() => {
+                  const allPhotos = [
+                    selectedProgram.mainImage,
+                    ...(selectedProgram.galleryImages || [])
+                  ].filter(Boolean)
+
+                  const activePhoto = allPhotos[activeGalleryIndex] || selectedProgram.mainImage
+
+                  return (
+                    <div className="space-y-3">
+                      <div className="relative h-72 sm:h-96 w-full rounded-2xl overflow-hidden bg-black shadow-inner">
+                        <img
+                          src={activePhoto}
+                          alt={selectedProgram.title}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+
+                      {allPhotos.length > 1 && (
+                        <div className="flex items-center gap-2 overflow-x-auto pb-2">
+                          {allPhotos.map((photo, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setActiveGalleryIndex(i)}
+                              className={`relative h-16 w-20 rounded-xl overflow-hidden border-2 shrink-0 transition ${
+                                activeGalleryIndex === i
+                                  ? 'border-emerald-600 scale-105 shadow'
+                                  : 'border-transparent opacity-60 hover:opacity-100'
+                              }`}
+                            >
+                              <img src={photo} alt="" className="h-full w-full object-cover" />
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* Title & Meta */}
+              <div className="space-y-2 border-b border-stone-200 pb-4">
+                <h2 className="text-xl sm:text-2xl font-black text-stone-900 leading-tight">
+                  {selectedProgram.title}
+                </h2>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs text-stone-500 font-mono">
+                  <span>📅 Date: <strong className="text-stone-800">{selectedProgram.date}</strong></span>
+                  <span>📍 State: <strong className="text-stone-800">{selectedProgram.state}</strong></span>
+                  <span>🏛️ Venue: <strong className="text-stone-800">{selectedProgram.location}</strong></span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 font-mono">
+                  Story &amp; Overview
+                </h4>
+                <p className="text-sm text-stone-700 leading-relaxed whitespace-pre-line">
+                  {selectedProgram.description}
+                </p>
+              </div>
+
+              {/* Highlights */}
+              {selectedProgram.highlights && selectedProgram.highlights.length > 0 && (
+                <div className="rounded-2xl bg-[#f7f5f0] p-4 border border-stone-200 space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-800 font-mono">
+                    Impact &amp; Key Highlights
+                  </h4>
+                  <ul className="grid sm:grid-cols-2 gap-2 text-xs text-stone-800">
+                    {selectedProgram.highlights.map((h, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{h}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {selectedProgram.organizer && (
+                <div className="text-xs text-stone-500 font-mono">
+                  Organized by: <span className="font-bold text-stone-800">{selectedProgram.organizer}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-stone-100 border-t border-stone-200 flex items-center justify-between shrink-0">
+              <span className="text-[11px] text-stone-500 font-mono">
+                SIDAAP Nigeria &bull; CAC RN: 8390984
+              </span>
+              <button
+                onClick={() => setSelectedProgram(null)}
+                className="px-5 py-2 rounded-xl bg-[#13231f] text-white text-xs font-bold hover:bg-stone-800 transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

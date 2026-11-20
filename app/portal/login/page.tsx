@@ -10,7 +10,9 @@ import {
   ArrowRight,
   AlertCircle,
   KeyRound,
-  X
+  X,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import {
   saveStoredUser,
@@ -22,6 +24,7 @@ export default function PortalLoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -119,12 +122,21 @@ export default function PortalLoginPage() {
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
                   <input
                     required
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-[#182c27] text-white pl-10 pr-4 py-3 rounded-xl border border-white/10 outline-none focus:border-[#c9ec63] focus:ring-1 focus:ring-[#c9ec63] text-xs placeholder:text-white/30 font-mono"
+                    className="w-full bg-[#182c27] text-white pl-10 pr-12 py-3 rounded-xl border border-white/10 outline-none focus:border-[#c9ec63] focus:ring-1 focus:ring-[#c9ec63] text-xs placeholder:text-white/30 font-mono"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    aria-pressed={showPassword}
+                    className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-lg text-[#c9ec63] hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c9ec63] cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" strokeWidth={2.25} /> : <Eye className="h-5 w-5" strokeWidth={2.25} />}
+                  </button>
                 </div>
               </div>
 

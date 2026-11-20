@@ -33,10 +33,8 @@ import {
   Check,
   UserPlus,
   Mail,
-  ExternalLink,
   Plus,
   X,
-  PhoneCall,
   MessageSquare
 } from 'lucide-react'
 
@@ -349,7 +347,7 @@ function ChatInner() {
     }, 3000)
   }
 
-  // Handle Add Person to WhatsApp/Portal
+  // Handle Add Person to Portal Chat
   const handleAddPerson = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!contactName.trim() && !contactEmail.trim() && !contactPhone.trim()) return
@@ -490,7 +488,7 @@ function ChatInner() {
       {/* Main Chat Container */}
       <div className="flex-1 flex overflow-hidden">
         {/* ========================================================= */}
-        {/* LEFT COLUMN: CHATS LIST (WhatsApp Style) */}
+        {/* LEFT COLUMN: CHATS LIST */}
         {/* ========================================================= */}
         <div className={`${mobileView === 'chat' ? 'hidden' : 'flex'} sm:flex w-full sm:w-80 md:w-96 bg-[#111e1b] border-r border-white/10 flex-col h-full shrink-0`}>
           {/* Header */}
@@ -513,7 +511,7 @@ function ChatInner() {
               <button
                 onClick={() => setIsAddPersonOpen(true)}
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#00a884] hover:bg-[#02be96] text-white text-[11px] font-bold uppercase tracking-wider transition shadow-md"
-                title="Add Person to WhatsApp by Email or Phone Number"
+                title="Add Person by Email or Phone Number"
               >
                 <UserPlus className="h-3.5 w-3.5" />
                 <span>+ Add Person</span>
@@ -622,7 +620,7 @@ function ChatInner() {
         </div>
 
         {/* ========================================================= */}
-        {/* RIGHT COLUMN: ACTIVE CONVERSATION (WhatsApp Style) */}
+        {/* RIGHT COLUMN: ACTIVE CONVERSATION */}
         {/* ========================================================= */}
         <div className={`${mobileView === 'list' ? 'hidden' : 'flex'} sm:flex flex-1 flex-col h-full bg-[#0d1815] relative`}>
           {/* Active Conversation Header */}
@@ -655,23 +653,6 @@ function ChatInner() {
             </div>
 
             <div className="flex items-center gap-3 text-white/70">
-              {/* WhatsApp App Direct Link Button */}
-              {activeRoom.description?.includes('📱') && (
-                <a
-                  href={`https://wa.me/${
-                    activeRoom.description.match(/(\+?234\d{10}|0[789][01]\d{8})/)?.[0]?.replace(/\D/g, '').replace(/^0/, '234') || '2348063430562'
-                  }`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#00a884] hover:bg-[#02be96] text-white text-xs font-bold transition shadow"
-                  title="Open this conversation on WhatsApp app"
-                >
-                  <PhoneCall className="h-3.5 w-3.5" />
-                  <span className="hidden md:inline">Open on WhatsApp</span>
-                  <ExternalLink className="h-3 w-3 opacity-75" />
-                </a>
-              )}
-
               <button className="p-2 hover:bg-white/10 rounded-full text-white/80" title="Audio Call">
                 <Phone className="h-4 w-4" />
               </button>
@@ -686,7 +667,7 @@ function ChatInner() {
 
           {/* Messages Stream */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 bg-[#0a1412] relative">
-            {/* Subtle WhatsApp wallpaper doodle pattern simulation */}
+            {/* Subtle background texture pattern */}
             <div className="pointer-events-none absolute inset-0 opacity-5 [background-image:radial-gradient(#c9ec63_1px,transparent_1px)] [background-size:24px_24px]" />
 
             {/* End-to-End Encryption Banner */}
@@ -721,7 +702,7 @@ function ChatInner() {
               const isPublicCitizen =
                 msg.senderRole === 'Citizen Inquiry' ||
                 msg.senderRole === 'Public Visitor' ||
-                msg.senderRole === 'WhatsApp Lead'
+                msg.senderRole === 'Citizen Lead'
 
               return (
                 <div
@@ -852,7 +833,7 @@ function ChatInner() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white tracking-tight">
-                    Add Person to WhatsApp &amp; Portal Chat
+                    Add Person to Portal Chat
                   </h3>
                   <p className="text-[11px] text-[#a9b9a8] font-mono">
                     Connect staff, state directors, medical partners, or citizens by Email or Phone
@@ -870,10 +851,10 @@ function ChatInner() {
 
             {/* Modal Form */}
             <form onSubmit={handleAddPerson} className="p-6 space-y-4 overflow-y-auto flex-1 text-xs">
-              {/* Phone / WhatsApp Number */}
+              {/* Phone Number */}
               <div>
                 <label className="block text-[#d1d9cf] font-bold mb-1 uppercase tracking-wider text-[11px]">
-                  WhatsApp / Phone Number
+                  Phone Number
                 </label>
                 <div className="relative">
                   <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-white/40" />
@@ -886,7 +867,7 @@ function ChatInner() {
                   />
                 </div>
                 <p className="mt-1 text-[10px] text-[#a9b9a8]">
-                  Enables instant 1-click launch to their physical WhatsApp app.
+                  Identifies the user or reaches them directly by phone.
                 </p>
               </div>
 

@@ -85,6 +85,7 @@ export default function StateDirectorDashboard() {
     phone: '',
     lga: '',
     city: '',
+    memberType: 'Member' as StateStaffMember['memberType'],
     roleTitle: 'Field Officer' as StateStaffMember['roleTitle'],
     avatarUrl: ''
   })
@@ -139,6 +140,7 @@ export default function StateDirectorDashboard() {
       state: activeState,
       lga: newStaff.lga || currentLgas[0] || 'Central LGA',
       city: newStaff.city || `${activeState} Urban`,
+      memberType: newStaff.memberType,
       roleTitle: newStaff.roleTitle,
       joinedDate: 'Today',
       assignedDirector: `${directorName} (${activeState} State Director)`,
@@ -158,7 +160,7 @@ export default function StateDirectorDashboard() {
       city: created.city,
       title: created.roleTitle,
       avatarInitials: created.name.split(' ').map(n => n[0]).join('').slice(0, 2),
-      avatarUrl: created.avatarUrl || undefined
+      avatarUrl: created.avatarUrl || ''
     }
     addStaffMember(created, newUser)
 
@@ -172,7 +174,7 @@ export default function StateDirectorDashboard() {
     })
 
     setShowAddStaffModal(false)
-    setNewStaff({ name: '', email: '', password: 'sidaap2026', phone: '', lga: '', city: '', roleTitle: 'Field Officer', avatarUrl: '' })
+    setNewStaff({ name: '', email: '', password: 'sidaap2026', phone: '', lga: '', city: '', memberType: 'Member', roleTitle: 'Field Officer', avatarUrl: '' })
   }
 
   // Log Activity Handler
@@ -200,21 +202,18 @@ export default function StateDirectorDashboard() {
 
   return (
     <div className="bg-[#f5f1e9] min-h-screen pb-20">
-      {/* State Header Banner */}
-      <div className="bg-[#13231f] text-white px-6 py-6 border-b border-white/10">
+      {/* State overview */}
+      <div className="border-b border-[#18312a]/10 bg-white px-6 py-7">
         <div className="mx-auto max-w-7xl flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span className="font-mono text-xs uppercase tracking-widest text-amber-300 font-bold">
-                State Directorate Authority &bull; {activeState} State Command
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mt-1">
-              {activeState} State Operations &amp; LGA Council
+            <span className="text-xs font-bold uppercase tracking-[0.16em] text-[#52720e]">
+              {activeState} state directorate
+            </span>
+            <h1 className="mt-2 text-2xl sm:text-3xl font-bold tracking-tight text-[#18312a]">
+              State operations
             </h1>
-            <p className="text-xs text-[#b6c4b9]">
-              State Director: <strong>{directorName}</strong> &bull; Secretariat: {directorLga} LGA ({directorCity}) &bull; Reporting to National HQ, Abuja.
+            <p className="mt-1 text-sm text-[#718079]">
+              Manage local teams, log outreach and respond to national directives.
             </p>
           </div>
 
@@ -342,7 +341,7 @@ export default function StateDirectorDashboard() {
         </div>
 
         {/* SECTION 2: STATE ROSTER (STATE DIRECTOR ADDS LOCAL MEMBERS!) */}
-        <div className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm">
+        <div id="lga-members" className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm scroll-mt-24">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
             <div>
               <span className="font-mono text-xs uppercase font-bold text-amber-800">
@@ -372,6 +371,7 @@ export default function StateDirectorDashboard() {
                   <th className="py-3 px-4">Member Name</th>
                   <th className="py-3 px-4">Local Government (LGA)</th>
                   <th className="py-3 px-4">City / Area</th>
+                  <th className="py-3 px-4">Type</th>
                   <th className="py-3 px-4">Role Designation</th>
                   <th className="py-3 px-4">Telephone</th>
                   <th className="py-3 px-4">Status</th>
@@ -401,6 +401,11 @@ export default function StateDirectorDashboard() {
                     </td>
                     <td className="py-4 px-4 font-medium text-stone-700">
                       {staff.city}
+                    </td>
+                    <td className="py-4 px-4">
+                      <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${staff.memberType === 'Staff' ? 'bg-amber-100 text-amber-800' : 'bg-blue-100 text-blue-800'}`}>
+                        {staff.memberType || 'Staff'}
+                      </span>
                     </td>
                     <td className="py-4 px-4">
                       <span className="rounded-lg bg-stone-100 text-stone-800 px-2.5 py-1 text-[11px] font-bold">
@@ -578,6 +583,16 @@ export default function StateDirectorDashboard() {
                   </select>
                 </div>
                 <div>
+                  <label className="block font-bold text-stone-700 mb-1">Member / Staff</label>
+                  <select value={editingStaff.memberType || 'Member'}
+                    onChange={e => setEditingStaff({ ...editingStaff, memberType: e.target.value as StateStaffMember['memberType'] })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]">
+                    <option value="Member">Member</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
+              </div>
+              <div>
                   <label className="block font-bold text-stone-700 mb-1">Role</label>
                   <select value={editingStaff.roleTitle}
                     onChange={e => setEditingStaff({ ...editingStaff, roleTitle: e.target.value as StateStaffMember['roleTitle'] })}
@@ -588,7 +603,6 @@ export default function StateDirectorDashboard() {
                     <option value="Counselor">Counselor</option>
                     <option value="Volunteer">Volunteer</option>
                   </select>
-                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
@@ -740,6 +754,17 @@ export default function StateDirectorDashboard() {
                     onChange={(e) => setNewStaff({ ...newStaff, city: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
                   />
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Member / Staff</label>
+                  <select
+                    value={newStaff.memberType}
+                    onChange={(e) => setNewStaff({ ...newStaff, memberType: e.target.value as StateStaffMember['memberType'] })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white font-medium outline-none focus:border-[#13231f]"
+                  >
+                    <option value="Member">Member</option>
+                    <option value="Staff">Staff</option>
+                  </select>
                 </div>
                 <div>
                   <label className="block font-bold text-stone-700 mb-1">Role Designation</label>
