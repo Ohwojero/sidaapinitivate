@@ -64,6 +64,18 @@ export const INITIAL_LEADERSHIP: LeadershipMember[] = [
 
 const STORAGE_KEY = 'sidaap_leadership'
 
+function withoutEmbeddedImages(members: LeadershipMember[]): LeadershipMember[] {
+  return members.map((member) => ({
+    ...member,
+    image: member.image.startsWith('data:') ? '' : member.image,
+  }))
+}
+
+function isStorageQuotaError(error: unknown): boolean {
+  return error instanceof DOMException &&
+    (error.name === 'QuotaExceededError' || error.code === 22)
+}
+
 export function getStoredLeadership(): LeadershipMember[] {
   if (typeof window === 'undefined') return INITIAL_LEADERSHIP
   try {
@@ -79,8 +91,6 @@ export async function saveStoredLeadership(member: LeadershipMember): Promise<Le
   const updated = existing
     ? current.map((item) => item.id === member.id ? member : item)
     : [member, ...current]
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
-  window.dispatchEvent(new Event('sidaap_leadership_updated'))
 
   const supabase = createClient()
   if (supabase) {
@@ -97,6 +107,21 @@ export async function saveStoredLeadership(member: LeadershipMember): Promise<Le
       throw new Error('The trustee was saved on this device, but Supabase rejected the database update.')
     }
   }
+
+  try {
+    const cache = supabase ? withoutEmbeddedImages(updated) : updated
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(cache))
+  } catch (error) {
+    if (isStorageQuotaError(error)) {
+      throw new Error(
+        supabase
+          ? 'The trustee was saved to the database, but this browser could not update its local cache. Refresh the page to reload it.'
+          : 'Browser storage is full. Please use a smaller portrait or remove an old portrait before saving.',
+      )
+    }
+    throw error
+  }
+  window.dispatchEvent(new Event('sidaap_leadership_updated'))
   return updated
 }
 
@@ -111,7 +136,7 @@ export async function deleteStoredLeadership(id: string): Promise<LeadershipMemb
   }
 
   const updated = getStoredLeadership().filter((member) => member.id !== id)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updated))
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(supabase ? withoutEmbeddedImages(updated) : updated))
   window.dispatchEvent(new Event('sidaap_leadership_updated'))
   return updated
 }
@@ -139,7 +164,7 @@ export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
       initials: item.initials,
     }))
     if (leadership.length > 0) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(leadership))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(withoutEmbeddedImages(leadership)))
       window.dispatchEvent(new Event('sidaap_leadership_updated'))
       return leadership
     }

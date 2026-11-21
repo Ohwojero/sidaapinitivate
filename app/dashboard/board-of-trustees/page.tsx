@@ -10,12 +10,14 @@ import {
   saveStoredLeadership,
 } from '@/lib/data/leadership-data'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
+import { compressImageFile } from '@/lib/utils'
 
 export default function BoardOfTrusteesPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
   const [editingLeader, setEditingLeader] = useState<LeadershipMember | null>(null)
   const [isAddingLeader, setIsAddingLeader] = useState(false)
   const [deletingLeaderId, setDeletingLeaderId] = useState<string | null>(null)
+  const [isCompressingPortrait, setIsCompressingPortrait] = useState(false)
   const [notice, setNotice] = useState('')
 
   useEffect(() => {
@@ -185,14 +187,25 @@ export default function BoardOfTrusteesPage() {
                   <input
                     type="file"
                     accept="image/*"
+                    disabled={isCompressingPortrait}
                     onChange={(event) => {
                       const file = event.target.files?.[0]
                       if (!file) return
-                      const reader = new FileReader()
-                      reader.onload = () => {
-                        if (typeof reader.result === 'string') setEditingLeader({ ...editingLeader, image: reader.result })
-                      }
-                      reader.readAsDataURL(file)
+                      setIsCompressingPortrait(true)
+                      void compressImageFile(file, 512, 512, 0.68)
+                        .then((image) => {
+                          if (image.length > 260_000) {
+                            throw new Error('This portrait is still too large after compression. Please choose a smaller image.')
+                          }
+                          setEditingLeader((current) => current ? { ...current, image } : current)
+                          setNotice('Portrait compressed and ready to save.')
+                        })
+                        .catch((error) => {
+                          setNotice(error instanceof Error ? error.message : 'Could not process this portrait.')
+                        })
+                        .finally(() => {
+                          setIsCompressingPortrait(false)
+                        })
                     }}
                     className="mt-2 block text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#18312a]/5 file:px-3 file:py-2 file:font-bold"
                   />
@@ -215,8 +228,12 @@ export default function BoardOfTrusteesPage() {
                   setEditingLeader(null)
                   setIsAddingLeader(false)
                 }} className="rounded-lg px-4 py-2.5 text-xs font-bold text-[#718079]">Cancel</button>
-                <button type="submit" className="rounded-lg bg-[#18312a] px-5 py-2.5 text-xs font-bold text-white">
-                  {isAddingLeader ? 'Add member' : 'Save profile'}
+                <button
+                  type="submit"
+                  disabled={isCompressingPortrait}
+                  className="rounded-lg bg-[#18312a] px-5 py-2.5 text-xs font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isCompressingPortrait ? 'Processing portrait...' : isAddingLeader ? 'Add member' : 'Save profile'}
                 </button>
               </div>
             </form>
