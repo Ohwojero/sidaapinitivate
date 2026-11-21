@@ -31,10 +31,13 @@ export function DirectoryExplorer() {
 
   useEffect(() => {
     let active = true
-    createClient().from('directories').select('id,name,directory_type,state_name,city,description,services,phone,website,is_featured').order('is_featured', { ascending: false }).then((res: any) => {
-      const data = res?.data
-      if (active && data?.length) setDirectories(data as Directory[])
-    })
+    const supabase = createClient()
+    if (supabase) {
+      supabase.from('directories').select('id,name,directory_type,state_name,city,description,services,phone,website,is_featured').order('is_featured', { ascending: false }).then((res: any) => {
+        const data = res?.data
+        if (active && data?.length) setDirectories(data as Directory[])
+      })
+    }
     return () => { active = false }
   }, [])
 

@@ -313,15 +313,15 @@ export default function BoardOfTrusteesPage() {
                   key={leader.id}
                   className="group flex flex-col overflow-hidden rounded-2xl border border-[#18312a]/10 bg-white shadow-sm transition hover:shadow-md"
                 >
-                  {/* Portrait Area: Shows image straight */}
-                  <div className="relative h-48 w-full bg-[#18312a] overflow-hidden">
+                  {/* Portrait Area: Shows image straight with generous height for full face & hat */}
+                  <div className="relative h-64 sm:h-72 w-full bg-[#18312a] overflow-hidden">
                     {leader.image ? (
                       <img
                         src={leader.image}
                         alt={leader.name}
                         loading="eager"
                         decoding="sync"
-                        className="h-full w-full object-cover object-top"
+                        className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#18312a] to-[#2b4c41]">
