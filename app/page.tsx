@@ -28,26 +28,88 @@ function getCarouselImage(image: string | null | undefined): string {
 }
 
 function getPositionBadge(role: string, body?: string): string {
-  const r = (role || '').toLowerCase()
-  const b = (body || '').toLowerCase()
+  const r = (role || '').toLowerCase().trim()
 
-  if (r.includes('publicity secretary') || b.includes('publicity')) return 'Publicity Secretary'
-  if (r.includes('treasurer') || b.includes('treasurer')) return 'Board Treasurer'
-  if (r.includes('founder') || r.includes('chairman') || b.includes('chairman')) return 'Founder & Board Chairman'
-  if (r.includes('secretary') || b.includes('secretary')) return 'Board Secretary'
-  if (r.includes('rehabilitation')) return 'Director of Rehabilitation'
-  if (r.includes('sports')) return 'Sports Director'
-  if (r.includes('welfare')) return 'Welfare Director'
-  if (r.includes('legal') || r.includes('compliance')) return 'Legal & Compliance'
-
-  if (body && body !== 'Board of Trustees') return body
-
-  const firstPart = role.split(/,|&|\band\b/i)[0].replace(/^Trustee\s*|^TBoard\s*/i, '').trim()
-  if (firstPart && firstPart.length > 2 && firstPart.length < 35) {
-    return firstPart
+  // 1. Vice Chairman check MUST come before Chairman!
+  if (r.includes('vice chairman') || r.includes('vice-chairman') || r.includes('vice president')) {
+    return 'Board Vice Chairman'
   }
 
-  return 'Executive Leadership'
+  // 2. Founder & Board Chairman (only if founder or chairman, and strictly NOT vice chairman)
+  if (r.includes('founder') || r.includes('board chairman') || (r.includes('chairman') && !r.includes('vice'))) {
+    return 'Founder & Board Chairman'
+  }
+
+  // 3. Publicity Secretary check MUST come before generic Secretary!
+  if (r.includes('publicity secretary') || r.includes('publicity')) {
+    return 'Board Publicity Secretary'
+  }
+
+  // 4. Board Secretary (general)
+  if (r.includes('secretary')) {
+    return 'Board Secretary'
+  }
+
+  // 5. Board Treasurer
+  if (r.includes('treasurer')) {
+    return 'Board Treasurer'
+  }
+
+  // 6. Board Auditor
+  if (r.includes('auditor')) {
+    return 'Board Auditor'
+  }
+
+  // 7. Rehabilitation
+  if (r.includes('rehabilitation')) {
+    return 'Director of Rehabilitation'
+  }
+
+  // 8. Youth & Kids
+  if (r.includes('youth') || r.includes('kids')) {
+    return 'Director of Youth Affairs'
+  }
+
+  // 9. Ethics & Disciplinary
+  if (r.includes('ethics') || r.includes('disciplinary')) {
+    return 'Director of Ethics & Disciplinary'
+  }
+
+  // 10. Welfare
+  if (r.includes('welfare')) {
+    return 'Director of Welfare'
+  }
+
+  // 11. Sports
+  if (r.includes('sports')) {
+    return 'Director of Sports'
+  }
+
+  // 12. Legal & Compliance
+  if (r.includes('legal') || r.includes('compliance')) {
+    return 'Legal & Compliance Director'
+  }
+
+  // 13. If a specific custom body was designated (other than default Board of Trustees)
+  if (body && body !== 'Board of Trustees') {
+    return body
+  }
+
+  // 14. Fallback: extract clean title from role
+  const cleaned = role
+    .replace(/^TrusteeBoard\s*/i, '')
+    .replace(/^TBoard\s*/i, '')
+    .replace(/^Trustee\s*&\s*/i, '')
+    .replace(/^Trustee\s*/i, '')
+    .split(/,|&|\band\b/i)[0]
+    .replace(/\s*of SIDAAP/i, '')
+    .trim()
+
+  if (cleaned && cleaned.length > 2 && cleaned.length < 35) {
+    return cleaned
+  }
+
+  return 'National Executive'
 }
 
 export default function HomePage() {
@@ -73,93 +135,58 @@ export default function HomePage() {
   }, [])
 
   // Dynamic slides for the NEW executive carousel:
-  // Includes Chairman/Founder, Secretary (Hon Friday Chalele), Executive Directors, and State Directors
+  // Includes Chairman/Founder, Vice Chairman, Secretary, Executive Directors, and State Directors
   const carouselSlides = useMemo(() => {
-    // 1. Founder & Board Chairman
-    const chairman = leadership.find((l) => {
-      const r = l.role.toLowerCase()
-      return r.includes('founder') || r.includes('chairman') || r.includes('country director')
-    }) || leadership[0]
-
-    // 2. Board Secretary (Requested by user: "secretary at the top should display on the carosuel too")
-    const secretary = leadership.find((l) => {
-      const r = l.role.toLowerCase()
-      const b = (l.body || '').toLowerCase()
-      return (r.includes('secretary') || b.includes('secretary')) && l.id !== chairman?.id
-    })
-
-    // 3. Other Executive Directors (Treasurer, Rehabilitation Director, etc.)
-    const otherExecutives = leadership.filter((l) => {
-      if (l.id === chairman?.id || l.id === secretary?.id) return false
-      const r = l.role.toLowerCase()
-      const b = (l.body || '').toLowerCase()
-      return (
-        r.includes('director') ||
-        r.includes('treasurer') ||
-        r.includes('coordinator') ||
-        b.includes('executive')
-      )
-    })
-
-    const slides: Array<{
-      id: string
-      name: string
-      role: string
-      area: string
-      category: 'Chairman' | 'Secretary' | 'Executive' | 'State Director'
-      image: string
-      initials: string
-    }> = []
-
-    if (chairman) {
-      slides.push({
-        id: `chairman-${chairman.id}`,
-        name: chairman.name,
-        role: chairman.role,
-        area: getPositionBadge(chairman.role, chairman.body),
-        category: 'Chairman',
-        image: getCarouselImage(chairman.image),
-        initials: chairman.initials || 'BO',
-      })
+    // Official ranking order for executive roles
+    const getExecutiveRank = (l: LeadershipMember) => {
+      const r = (l.role || '').toLowerCase()
+      if (r.includes('founder') || (r.includes('chairman') && !r.includes('vice'))) return 1
+      if (r.includes('vice chairman') || r.includes('vice-chairman')) return 2
+      if (r.includes('secretary') && !r.includes('publicity')) return 3
+      if (r.includes('publicity secretary') || r.includes('publicity')) return 4
+      if (r.includes('treasurer')) return 5
+      if (r.includes('auditor')) return 6
+      if (r.includes('director') || r.includes('welfare') || r.includes('ethics')) return 7
+      return 10
     }
 
-    if (secretary) {
-      slides.push({
-        id: `secretary-${secretary.id}`,
-        name: secretary.name,
-        role: secretary.role,
-        area: getPositionBadge(secretary.role, secretary.body),
-        category: 'Secretary',
-        image: getCarouselImage(secretary.image),
-        initials: secretary.initials || 'FC',
+    // Only include executive / director officers in the hero carousel (not pure non-executive trustees)
+    const executiveLeaders = leadership
+      .filter((l) => {
+        const r = (l.role || '').toLowerCase()
+        const b = (l.body || '').toLowerCase()
+        return (
+          r.includes('founder') ||
+          r.includes('chairman') ||
+          r.includes('secretary') ||
+          r.includes('treasurer') ||
+          r.includes('auditor') ||
+          r.includes('director') ||
+          b.includes('executive')
+        )
       })
-    }
+      .sort((a, b) => getExecutiveRank(a) - getExecutiveRank(b))
 
-    otherExecutives.forEach((exec) => {
-      slides.push({
-        id: `exec-${exec.id}`,
-        name: exec.name,
-        role: exec.role,
-        area: getPositionBadge(exec.role, exec.body),
-        category: 'Executive',
-        image: getCarouselImage(exec.image),
-        initials: exec.initials || 'EX',
-      })
-    })
-
-    stateDirectors
-      .filter((d) => d.status === 'active')
-      .forEach((d) => {
-        slides.push({
+    const slides = [
+      ...executiveLeaders.map((leader) => ({
+        id: `leader-${leader.id}`,
+        name: leader.name,
+        role: leader.role,
+        area: getPositionBadge(leader.role, leader.body),
+        image: getCarouselImage(leader.image),
+        initials: leader.initials || 'SL',
+      })),
+      ...stateDirectors
+        .filter((d) => d.status === 'active')
+        .map((d) => ({
           id: `state-${d.id}`,
           name: d.name,
           role: 'State Director',
           area: `${d.state} State Director`,
-          category: 'State Director',
           image: getCarouselImage(d.avatarUrl),
           initials: d.name.split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase(),
-        })
-      })
+        })),
+    ]
 
     return slides
   }, [leadership, stateDirectors])
