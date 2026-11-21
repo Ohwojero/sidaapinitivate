@@ -153,11 +153,15 @@ create table if not exists public.leadership (
   id           text primary key,
   name         text not null,
   role         text not null,
+  body         text default 'Board of Trustees',
   description  text not null,
   image        text,
   initials     text not null,
   created_at   timestamptz not null default now()
 );
+
+-- Migration if leadership table already exists:
+alter table if exists public.leadership add column if not exists body text default 'Board of Trustees';
 
 insert into public.leadership (id, name, role, description, image, initials)
 values
