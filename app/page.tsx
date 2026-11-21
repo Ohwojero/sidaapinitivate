@@ -27,6 +27,29 @@ function getCarouselImage(image: string | null | undefined): string {
   return image && !/images\.unsplash\.com|source\.unsplash\.com/i.test(image) ? image : ''
 }
 
+function getPositionBadge(role: string, body?: string): string {
+  const r = (role || '').toLowerCase()
+  const b = (body || '').toLowerCase()
+
+  if (r.includes('publicity secretary') || b.includes('publicity')) return 'Publicity Secretary'
+  if (r.includes('treasurer') || b.includes('treasurer')) return 'Board Treasurer'
+  if (r.includes('founder') || r.includes('chairman') || b.includes('chairman')) return 'Founder & Board Chairman'
+  if (r.includes('secretary') || b.includes('secretary')) return 'Board Secretary'
+  if (r.includes('rehabilitation')) return 'Director of Rehabilitation'
+  if (r.includes('sports')) return 'Sports Director'
+  if (r.includes('welfare')) return 'Welfare Director'
+  if (r.includes('legal') || r.includes('compliance')) return 'Legal & Compliance'
+
+  if (body && body !== 'Board of Trustees') return body
+
+  const firstPart = role.split(/,|&|\band\b/i)[0].replace(/^Trustee\s*|^TBoard\s*/i, '').trim()
+  if (firstPart && firstPart.length > 2 && firstPart.length < 35) {
+    return firstPart
+  }
+
+  return 'Executive Leadership'
+}
+
 export default function HomePage() {
   const [stateDirectors, setStateDirectors] = useState<StateDirector[]>(getStoredDirectors)
   const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
@@ -93,7 +116,7 @@ export default function HomePage() {
         id: `chairman-${chairman.id}`,
         name: chairman.name,
         role: chairman.role,
-        area: 'Founder & Board Chairman',
+        area: getPositionBadge(chairman.role, chairman.body),
         category: 'Chairman',
         image: getCarouselImage(chairman.image),
         initials: chairman.initials || 'BO',
@@ -105,7 +128,7 @@ export default function HomePage() {
         id: `secretary-${secretary.id}`,
         name: secretary.name,
         role: secretary.role,
-        area: 'Board Secretary & International Welfare',
+        area: getPositionBadge(secretary.role, secretary.body),
         category: 'Secretary',
         image: getCarouselImage(secretary.image),
         initials: secretary.initials || 'FC',
@@ -117,7 +140,7 @@ export default function HomePage() {
         id: `exec-${exec.id}`,
         name: exec.name,
         role: exec.role,
-        area: 'National Executive Directorate',
+        area: getPositionBadge(exec.role, exec.body),
         category: 'Executive',
         image: getCarouselImage(exec.image),
         initials: exec.initials || 'EX',
@@ -131,7 +154,7 @@ export default function HomePage() {
           id: `state-${d.id}`,
           name: d.name,
           role: 'State Director',
-          area: `${d.state} State Outreach`,
+          area: `${d.state} State Director`,
           category: 'State Director',
           image: getCarouselImage(d.avatarUrl),
           initials: d.name.split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase(),
