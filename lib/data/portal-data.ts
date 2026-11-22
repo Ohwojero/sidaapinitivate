@@ -132,192 +132,13 @@ export interface ChatRoom {
   avatarColor: string
 }
 
-export const INITIAL_NATIONAL_DIRECTIVES: NationalDirective[] = [
-  {
-    id: 'dir-nat-01',
-    title: 'Nationwide Q4 Secondary School Exercise Books Dispatch',
-    issuedBy: 'Dr. Friday Chalele (National Trustee / Executive Directorate)',
-    date: 'October 28, 2026',
-    priority: 'high',
-    content: 'All 36 State Directors and LGA School Liaisons are instructed to complete distribution of the new SIDAAP branded anti-drug exercise books to public secondary schools. Ensure photo reports are submitted via the portal before the 15th of next month.',
-    targetScope: 'All 36 States + Abuja FCT',
-    upcomingEventDate: 'November 15, 2026'
-  },
-  {
-    id: 'dir-nat-02',
-    title: 'Joint NDLEA Sensitization Marches Against Synthetic Opioids & Meth',
-    issuedBy: 'National Secretariat (Abuja Headquarters)',
-    date: 'October 20, 2026',
-    priority: 'urgent',
-    content: 'Each State Director must coordinate directly with the NDLEA State Command (Drug Demand Reduction Unit) to conduct localized community rallies in high-risk motor parks and markets against Colorado (Colo) and Mkpuru Mmiri.',
-    targetScope: 'All State Chapters',
-    upcomingEventDate: 'November 22, 2026'
-  },
-  {
-    id: 'dir-nat-03',
-    title: 'SIDAAP Football Academy U-17 State Scouting Showcase',
-    issuedBy: 'Prosper Ohwojero (Trustee & Sports Director)',
-    date: 'October 15, 2026',
-    priority: 'standard',
-    content: 'Following CAC registration (RC: 9864105), youth coaches across Lagos, Delta, Rivers, and Abuja chapters are to host free trials for talented vulnerable youth. Kits will be delivered from the national warehouse.',
-    targetScope: 'Sports Academy Coordinators',
-    upcomingEventDate: 'December 02, 2026'
-  }
-]
+export const INITIAL_NATIONAL_DIRECTIVES: NationalDirective[] = []
 
-export const INITIAL_STATE_ACTIVITIES: StateActivity[] = [
-  {
-    id: 'act-1',
-    title: 'Secondary School Drug Awareness Workshop & Exercise Books Giveaway',
-    state: 'Lagos',
-    lga: 'Ikeja',
-    city: 'Ikeja Central',
-    category: 'School Outreach',
-    date: 'Yesterday, 11:30 AM',
-    reportedBy: 'Blessing Okon (Counselor & School Liaison)',
-    studentsReached: 620,
-    booksDistributed: 450,
-    status: 'Verified Nationally',
-    notes: 'Engaged SS1 to SS3 students on dangers of synthetic weed (Colorado) and codeine syrup. Distributed 450 free branded exercise books.'
-  },
-  {
-    id: 'act-2',
-    title: 'Bwari Secondary Schools Anti-Drug Rally & Parent Counseling Session',
-    state: 'Abuja (FCT)',
-    lga: 'Bwari',
-    city: 'Kubwa',
-    category: 'School Outreach',
-    date: '2 days ago',
-    reportedBy: 'Praise Ohwojero Efe (Trustee & School Outreach)',
-    studentsReached: 480,
-    booksDistributed: 300,
-    status: 'Verified Nationally',
-    notes: 'Outreach held at Kubwa Town Hall with secondary students, principals, and parent association executives.'
-  },
-  {
-    id: 'act-3',
-    title: 'U-17 Football Academy Scouting Match & Anti-Substance Screening',
-    state: 'Delta',
-    lga: 'Warri South',
-    city: 'Warri Urban',
-    category: 'Football Tournament',
-    date: '3 days ago',
-    reportedBy: 'Coach Emeka Uba (Youth Coach)',
-    studentsReached: 120,
-    booksDistributed: 100,
-    status: 'Approved by State',
-    notes: 'Youth football showcase held at Effurun township stadium. 120 youths tested, 14 scouted for academy trial roster.'
-  },
-  {
-    id: 'act-4',
-    title: 'Motor Park Grassroots Drug Sensitization Walk with NDLEA Kano Command',
-    state: 'Kano',
-    lga: 'Kano Municipal',
-    city: 'Kano City',
-    category: 'Community March',
-    date: '4 days ago',
-    reportedBy: 'Abubakar Lawal (Field Officer)',
-    studentsReached: 350,
-    booksDistributed: 150,
-    status: 'Verified Nationally',
-    notes: 'Hausa-language street march addressing tramadol and cough syrup abuse among inter-state drivers and young artisans.'
-  }
-]
+export const INITIAL_STATE_ACTIVITIES: StateActivity[] = []
 
 export const INITIAL_STATE_DIRECTORS: StateDirector[] = []
 
-export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = [
-  {
-    id: 'staff-1',
-    name: 'Praise Ohwojero Efe',
-    email: 'praise.efe@sidaap.org',
-    phone: '0806 111 0001',
-    state: 'Abuja (FCT)',
-    lga: 'Municipal Area Council (AMAC)',
-    city: 'Wuse & Garki',
-    memberType: 'Staff',
-    roleTitle: 'School Liaison',
-    joinedDate: 'April 2025',
-    assignedDirector: 'Dr. Friday Chalele',
-    status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'staff-2',
-    name: 'Blessing Okon',
-    email: 'blessing.lagos@sidaap.org',
-    phone: '0802 222 0002',
-    state: 'Lagos',
-    lga: 'Ikeja',
-    city: 'Ikeja & Maryland',
-    memberType: 'Member',
-    roleTitle: 'Counselor',
-    joinedDate: 'May 2025',
-    assignedDirector: 'Engr. Babatunde Sanusi',
-    status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'staff-3',
-    name: 'Ayomide Balogun',
-    email: 'ayomide.alimosho@sidaap.org',
-    phone: '0802 333 4444',
-    state: 'Lagos',
-    lga: 'Alimosho',
-    city: 'Egbeda / Igando',
-    memberType: 'Member',
-    roleTitle: 'Field Officer',
-    joinedDate: 'June 2025',
-    assignedDirector: 'Engr. Babatunde Sanusi',
-    status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'staff-4',
-    name: 'Coach Emeka Uba',
-    email: 'emeka.sports@sidaap.org',
-    phone: '0803 333 0003',
-    state: 'Delta',
-    lga: 'Warri South',
-    city: 'Warri Urban',
-    memberType: 'Member',
-    roleTitle: 'Youth Coach',
-    joinedDate: 'June 2025',
-    assignedDirector: 'Prosper Ohwojero',
-    status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'staff-5',
-    name: 'Abubakar Lawal',
-    email: 'lawal.kano@sidaap.org',
-    phone: '0807 444 0004',
-    state: 'Kano',
-    lga: 'Kano Municipal',
-    city: 'Kano Sabon Gari',
-    memberType: 'Staff',
-    roleTitle: 'Field Officer',
-    joinedDate: 'July 2025',
-    assignedDirector: 'Mallam Ibrahim Danbatta',
-    status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=256&h=256&q=80'
-  },
-  {
-    id: 'staff-6',
-    name: 'Chioma Nwosu',
-    email: 'chioma.rivers@sidaap.org',
-    phone: '0808 555 1234',
-    state: 'Rivers',
-    lga: 'Port Harcourt',
-    city: 'D/Line, Port Harcourt',
-    memberType: 'Staff',
-    roleTitle: 'Counselor',
-    joinedDate: 'August 2025',
-    assignedDirector: 'Dr. (Mrs) Ngozi Amadi',
-    status: 'active',
-    avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=256&h=256&q=80'
-  }
-]
+export const INITIAL_STAFF_MEMBERS: StateStaffMember[] = []
 
 export const INITIAL_CHAT_ROOMS: ChatRoom[] = [
   {
@@ -400,6 +221,16 @@ export const INITIAL_MESSAGES: Record<string, ChatMessage[]> = {}
 const DIRECTORS_KEY = 'sidaap_state_directors'
 const STAFF_KEY = 'sidaap_state_staff'
 const ACTIVITIES_KEY = 'sidaap_state_activities'
+export const LEGACY_SAMPLE_STAFF_IDS = new Set([
+  'staff-1',
+  'staff-2',
+  'staff-3',
+  'staff-4',
+  'staff-5',
+  'staff-6',
+])
+export const LEGACY_SAMPLE_ACTIVITY_IDS = new Set(['act-1', 'act-2', 'act-3', 'act-4'])
+export const LEGACY_SAMPLE_DIRECTIVE_IDS = new Set(['dir-nat-01', 'dir-nat-02', 'dir-nat-03'])
 const LEGACY_SAMPLE_DIRECTOR_IDS = new Set([
   'dir-fct',
   'dir-lagos',
@@ -444,17 +275,13 @@ export function getStoredStaff(): StateStaffMember[] {
     const raw = localStorage.getItem(STAFF_KEY)
     if (raw) {
       const parsed: StateStaffMember[] = JSON.parse(raw)
-      const existingIds = new Set(parsed.map(s => s.id))
-      const missing = INITIAL_STAFF_MEMBERS.filter(s => !existingIds.has(s.id))
-      if (missing.length > 0) {
-        const merged = [...parsed, ...missing]
-        localStorage.setItem(STAFF_KEY, JSON.stringify(merged))
-        return merged
+      const current = parsed.filter((member) => !LEGACY_SAMPLE_STAFF_IDS.has(member.id))
+      if (current.length !== parsed.length) {
+        localStorage.setItem(STAFF_KEY, JSON.stringify(current))
       }
-      return parsed
-    } else {
-      localStorage.setItem(STAFF_KEY, JSON.stringify(INITIAL_STAFF_MEMBERS))
+      return current
     }
+    localStorage.setItem(STAFF_KEY, JSON.stringify(INITIAL_STAFF_MEMBERS))
   } catch (err) {
     console.error('Failed to get stored staff', err)
   }
@@ -476,17 +303,13 @@ export function getStoredActivities(): StateActivity[] {
     const raw = localStorage.getItem(ACTIVITIES_KEY)
     if (raw) {
       const parsed: StateActivity[] = JSON.parse(raw)
-      const existingIds = new Set(parsed.map(a => a.id))
-      const missing = INITIAL_STATE_ACTIVITIES.filter(a => !existingIds.has(a.id))
-      if (missing.length > 0) {
-        const merged = [...parsed, ...missing]
-        localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(merged))
-        return merged
+      const current = parsed.filter((activity) => !LEGACY_SAMPLE_ACTIVITY_IDS.has(activity.id))
+      if (current.length !== parsed.length) {
+        localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(current))
       }
-      return parsed
-    } else {
-      localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(INITIAL_STATE_ACTIVITIES))
+      return current
     }
+    localStorage.setItem(ACTIVITIES_KEY, JSON.stringify(INITIAL_STATE_ACTIVITIES))
   } catch (err) {
     console.error('Failed to get stored activities', err)
   }

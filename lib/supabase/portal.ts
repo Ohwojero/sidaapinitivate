@@ -15,7 +15,10 @@ import {
   saveStoredStaff,
   getStoredActivities,
   saveStoredActivities,
-  INITIAL_NATIONAL_DIRECTIVES
+  INITIAL_NATIONAL_DIRECTIVES,
+  LEGACY_SAMPLE_STAFF_IDS,
+  LEGACY_SAMPLE_ACTIVITY_IDS,
+  LEGACY_SAMPLE_DIRECTIVE_IDS,
 } from '@/lib/data/portal-data'
 import { AuthUser, getUserRegistry, registerUser } from '@/lib/auth/session'
 
@@ -228,7 +231,7 @@ export async function fetchStaff(): Promise<StateStaffMember[]> {
       .select('*')
       .order('created_at', { ascending: true })
     if (error || !data || data.length === 0) return getStoredStaff()
-    const staff: StateStaffMember[] = data.map((s: any) => ({
+    const staff = data.map((s: any): StateStaffMember => ({
       id: s.id,
       name: s.name,
       email: s.email,
@@ -242,7 +245,7 @@ export async function fetchStaff(): Promise<StateStaffMember[]> {
       assignedDirector: s.assigned_director,
       status: s.status,
       avatarUrl: s.avatar_url ?? undefined
-    }))
+    })).filter((member) => !LEGACY_SAMPLE_STAFF_IDS.has(member.id))
     saveStoredStaff(staff)
     return staff
   } catch (err) {
@@ -339,7 +342,7 @@ export async function fetchActivities(): Promise<StateActivity[]> {
       .select('*')
       .order('created_at', { ascending: false })
     if (error || !data || data.length === 0) return getStoredActivities()
-    const activities: StateActivity[] = data.map((a: any) => ({
+    const activities = data.map((a: any): StateActivity => ({
       id: a.id,
       title: a.title,
       state: a.state,
@@ -352,7 +355,7 @@ export async function fetchActivities(): Promise<StateActivity[]> {
       booksDistributed: a.books_distributed ?? undefined,
       status: a.status,
       notes: a.notes ?? ''
-    }))
+    })).filter((activity) => !LEGACY_SAMPLE_ACTIVITY_IDS.has(activity.id))
     saveStoredActivities(activities)
     return activities
   } catch (err) {
@@ -399,16 +402,18 @@ export async function fetchDirectives(): Promise<NationalDirective[]> {
       .select('*')
       .order('created_at', { ascending: false })
     if (error || !data || data.length === 0) return INITIAL_NATIONAL_DIRECTIVES
-    return data.map((d: any) => ({
-      id: d.id,
-      title: d.title,
-      issuedBy: d.issued_by,
-      date: new Date(d.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
-      priority: d.priority,
-      content: d.content,
-      targetScope: d.target_scope,
-      upcomingEventDate: d.upcoming_event_date ?? undefined
-    }))
+    return data
+      .filter((d: any) => !LEGACY_SAMPLE_DIRECTIVE_IDS.has(d.id))
+      .map((d: any) => ({
+        id: d.id,
+        title: d.title,
+        issuedBy: d.issued_by,
+        date: new Date(d.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+        priority: d.priority,
+        content: d.content,
+        targetScope: d.target_scope,
+        upcomingEventDate: d.upcoming_event_date ?? undefined
+      }))
   } catch (err) {
     console.error('[sidaap:portal] fetchDirectives error', err)
     return INITIAL_NATIONAL_DIRECTIVES

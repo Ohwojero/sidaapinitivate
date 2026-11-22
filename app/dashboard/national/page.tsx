@@ -44,6 +44,7 @@ import {
   saveStoredLeadership,
   deleteStoredLeadership,
   DEFAULT_LEADERSHIP_BODIES,
+  isNationalExecutiveLeader,
 } from '@/lib/data/leadership-data'
 import {
   ShieldCheck,
@@ -146,7 +147,7 @@ export default function NationalDirectorDashboard() {
     status: 'past' as 'past' | 'upcoming' | 'ongoing',
     date: new Date().toISOString().split('T')[0],
     category: PROGRAM_CATEGORIES[0],
-    state: '',
+    state: 'Abuja (FCT)',
     location: '',
     description: '',
     mainImage: '',
@@ -214,6 +215,7 @@ export default function NationalDirectorDashboard() {
 
   // Dynamic LGAs for selected director state
   const availableDirectorLgas = NIGERIA_STATES.find(s => s.name === newDirector.state)?.lgas || []
+  const nationalExecutiveLeaders = nationalLeaders.filter(isNationalExecutiveLeader)
 
   // National Leader Handlers
   const openAddNationalLeader = () => {
@@ -227,7 +229,7 @@ export default function NationalDirectorDashboard() {
       image: '',
       initials: '',
       phone: '',
-      state: 'Abuja (FCT)',
+      state: '',
       positionNumber: undefined,
     })
     setShowNationalLeaderModal(true)
@@ -904,12 +906,12 @@ export default function NationalDirectorDashboard() {
           </div>
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {nationalLeaders.length === 0 ? (
+            {nationalExecutiveLeaders.length === 0 ? (
               <div className="col-span-full py-10 text-center text-xs text-stone-500 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
                 No national leadership members recorded yet. Click &ldquo;Add National Director&rdquo; above.
               </div>
             ) : (
-              nationalLeaders.map((leader) => (
+              nationalExecutiveLeaders.map((leader) => (
                 <div key={leader.id} className="rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden flex flex-col justify-between shadow-xs">
                   <div className="p-4 flex items-start gap-3">
                     <div className="h-16 w-16 rounded-xl bg-[#13231f] flex-shrink-0 overflow-hidden border border-stone-200">
@@ -936,7 +938,20 @@ export default function NationalDirectorDashboard() {
                       <p className="text-xs font-semibold text-emerald-900 leading-tight mt-0.5">{leader.role}</p>
                       <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-stone-500">
                         {leader.state && <span>📍 {leader.state}</span>}
-                        {leader.phone && <span>📞 {leader.phone}</span>}
+                        {leader.phone ? (
+                          <a
+                            href={`tel:${leader.phone.replace(/[^\d+]/g, '')}`}
+                            className="inline-flex items-center gap-1 hover:text-emerald-800"
+                          >
+                            <Phone className="h-3 w-3" />
+                            Phone: {leader.phone}
+                          </a>
+                        ) : (
+                          <span className="inline-flex items-center gap-1">
+                            <Phone className="h-3 w-3" />
+                            Phone: Not added
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1129,7 +1144,13 @@ export default function NationalDirectorDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-stone-100 text-stone-700">
-                {filteredStaff.map((staff) => (
+                {filteredStaff.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-10 text-center text-sm text-stone-500">
+                      No registered State &amp; LGA personnel yet.
+                    </td>
+                  </tr>
+                ) : filteredStaff.map((staff) => (
                   <tr key={staff.id} className="hover:bg-stone-50/80 transition">
                     <td className="py-4 px-4 font-bold text-stone-900">
                       <div className="text-sm">{staff.name}</div>

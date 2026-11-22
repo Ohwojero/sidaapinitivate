@@ -22,6 +22,22 @@ export const DEFAULT_LEADERSHIP_BODIES = [
   'Executive Directorate',
 ] as const
 
+export function getLeadershipBody(member: Pick<LeadershipMember, 'body' | 'role'>): string {
+  const isBoardRole = /\bboard\b|\btrustees?\b/i.test(member.role)
+  if (isBoardRole) return 'Board of Trustees'
+
+  const body = member.body?.trim()
+  if (body) return body
+
+  const isNationalDirector = /\bnational\s+(?:executive\s+)?director\b/i.test(member.role)
+  if (isNationalDirector) return 'Executive Directorate'
+  return 'Board of Trustees'
+}
+
+export function isNationalExecutiveLeader(member: Pick<LeadershipMember, 'body' | 'role'>): boolean {
+  return getLeadershipBody(member).toLowerCase() === 'executive directorate'
+}
+
 export const INITIAL_LEADERSHIP: LeadershipMember[] = [
   {
     id: 'leader-friday-chalele',
@@ -93,6 +109,10 @@ function withoutEmbeddedImages(members: LeadershipMember[]): LeadershipMember[] 
 
 export function getStoredLeadership(): LeadershipMember[] {
   if (memoryLeadershipCache && memoryLeadershipCache.length > 0) {
+    memoryLeadershipCache = memoryLeadershipCache.map((member) => ({
+      ...member,
+      body: getLeadershipBody(member),
+    }))
     return memoryLeadershipCache
   }
   if (typeof window === 'undefined') return INITIAL_LEADERSHIP
@@ -102,7 +122,8 @@ export function getStoredLeadership(): LeadershipMember[] {
       const parsed = JSON.parse(raw)
       const list = parsed.map((m: any) => ({
         ...m,
-        body: m.body || 'Board of Trustees',
+        body: getLeadershipBody(m),
+        phone: m.phone || m.phone_number || undefined,
       }))
       if (list.length > 0) {
         memoryLeadershipCache = list
@@ -127,7 +148,7 @@ function safelyCacheToLocalStorage(members: LeadershipMember[]) {
 }
 
 export async function saveStoredLeadership(member: LeadershipMember): Promise<LeadershipMember[]> {
-  const body = (member.body || '').trim() || 'Board of Trustees'
+  const body = getLeadershipBody(member)
   const memberWithBody: LeadershipMember = {
     ...member,
     body,
@@ -224,7 +245,7 @@ export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
     const leadership = data.map((item: any): LeadershipMember => {
       let body = item.body
       let description = item.description || ''
-      let phone = item.phone || undefined
+      let phone = item.phone || item.phone_number || undefined
       let state = item.state || undefined
       let positionNumber = item.position_number !== undefined && item.position_number !== null ? Number(item.position_number) : undefined
 
@@ -257,7 +278,7 @@ export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
         id: item.id,
         name: item.name,
         role: item.role,
-        body: body || 'Board of Trustees',
+        body: getLeadershipBody({ role: item.role, body }),
         description,
         image: item.image ?? '',
         initials: item.initials || item.name.split(/\s+/).map((p: string) => p[0]).join('').slice(0, 2).toUpperCase(),

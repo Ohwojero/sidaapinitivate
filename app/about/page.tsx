@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { fetchStoredLeadership, getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
+import { fetchStoredLeadership, getLeadershipBody, getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
 import { getStoredDirectors, StateDirector } from '@/lib/data/portal-data'
 import { fetchDirectors } from '@/lib/supabase/portal'
 import {
@@ -174,18 +174,10 @@ export default function AboutPage() {
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {leaders
               .filter((l) => {
-                const r = l.role.toLowerCase()
-                return (
-                  r.includes('founder') ||
-                  r.includes('chairman') ||
-                  r.includes('secretary') ||
-                  r.includes('treasurer') ||
-                  r.includes('director') ||
-                  r.includes('auditor')
-                )
+                return getLeadershipBody(l).toLowerCase() === 'executive directorate'
               })
               .map((leader) => (
-                <article key={leader.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
+                <article key={leader.id} className="about-leader-card overflow-hidden rounded-2xl border border-stone-200 bg-stone-50 shadow-sm">
                   <div className="relative h-60 bg-[#13231f] overflow-hidden">
                     {leader.image ? (
                       <img src={leader.image} alt={leader.name} className="h-full w-full object-cover object-top" />
@@ -202,6 +194,11 @@ export default function AboutPage() {
                     <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-800">
                       {leader.role}
                     </p>
+                    {leader.phone && (
+                      <a href={`tel:${leader.phone}`} className="mt-2 inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 hover:underline">
+                        <Phone className="h-3.5 w-3.5" />{leader.phone}
+                      </a>
+                    )}
                     {leader.description && (
                       <p className="mt-2 text-xs text-stone-600 leading-relaxed line-clamp-3">
                         {leader.description}
@@ -227,8 +224,10 @@ export default function AboutPage() {
             </p>
 
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              {leaders.map((leader) => (
-                <article key={leader.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]">
+              {leaders
+                .filter((leader) => getLeadershipBody(leader).toLowerCase() === 'board of trustees')
+                .map((leader) => (
+                <article key={leader.id} className="about-leader-card overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07] shadow-lg">
                   <div className="relative h-60 bg-[#0c1614] overflow-hidden">
                     {leader.image ? (
                       <img src={leader.image} alt={leader.name} className="h-full w-full object-cover object-top" />
@@ -379,3 +378,4 @@ export default function AboutPage() {
     </div>
   )
 }
+

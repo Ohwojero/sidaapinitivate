@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2, X, Users, ShieldCheck, Sparkles, Loader2, Phone, MapPin, Hash } from 'lucide-react'
+import { Pencil, Plus, Trash2, X, Users, ShieldCheck, Sparkles, Loader2, Phone, MapPin } from 'lucide-react'
 import {
   getStoredLeadership,
   fetchStoredLeadership,
@@ -9,10 +9,10 @@ import {
   deleteStoredLeadership,
   saveStoredLeadership,
   DEFAULT_LEADERSHIP_BODIES,
+  getLeadershipBody,
 } from '@/lib/data/leadership-data'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { compressImageFile } from '@/lib/utils'
-import { NIGERIA_STATES } from '@/lib/data/nigeria-data'
 
 export default function BoardOfTrusteesPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>([])
@@ -75,6 +75,9 @@ export default function BoardOfTrusteesPage() {
     })
     return Array.from(set)
   }, [leadership])
+  const visibleLeadership = leadership.filter(
+    (member) => getLeadershipBody(member).toLowerCase() !== 'executive directorate',
+  )
 
   const saveLeader = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -246,7 +249,7 @@ export default function BoardOfTrusteesPage() {
               </div>
             ))}
           </div>
-        ) : leadership.length === 0 ? (
+        ) : visibleLeadership.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-dashed border-[#18312a]/20 bg-white p-12 text-center">
             <Users className="mx-auto h-12 w-12 text-stone-300" />
             <h3 className="mt-4 text-base font-bold">No leadership members recorded</h3>
@@ -264,7 +267,7 @@ export default function BoardOfTrusteesPage() {
         ) : (
           /* Members Grid - NOT a Carousel, Shows Image Straight */
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {leadership.map((leader) => {
+            {visibleLeadership.map((leader) => {
               const body = leader.body || 'Board of Trustees'
               return (
                 <article
@@ -481,8 +484,8 @@ export default function BoardOfTrusteesPage() {
                 />
               </div>
 
-              {/* Number, State & Position Rank Number */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Phone Number */}
+              <div>
                 <div className="space-y-1">
                   <label className="block text-xs font-bold text-stone-800 flex items-center gap-1">
                     <Phone className="h-3 w-3 text-stone-500" />
@@ -494,45 +497,6 @@ export default function BoardOfTrusteesPage() {
                     value={editingLeader.phone || ''}
                     onChange={(event) =>
                       setEditingLeader({ ...editingLeader, phone: event.target.value })
-                    }
-                    className="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs outline-none focus:border-[#18312a]"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-stone-800 flex items-center gap-1">
-                    <MapPin className="h-3 w-3 text-stone-500" />
-                    Assigned / Origin State
-                  </label>
-                  <select
-                    value={editingLeader.state || ''}
-                    onChange={(event) =>
-                      setEditingLeader({ ...editingLeader, state: event.target.value })
-                    }
-                    className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#18312a]"
-                  >
-                    <option value="">-- National / Select State --</option>
-                    {NIGERIA_STATES.map((s) => (
-                      <option key={s.name} value={s.name}>{s.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-stone-800 flex items-center gap-1">
-                    <Hash className="h-3 w-3 text-stone-500" />
-                    Position / Rank No.
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 1, 2, 3..."
-                    value={editingLeader.positionNumber ?? ''}
-                    onChange={(event) =>
-                      setEditingLeader({
-                        ...editingLeader,
-                        positionNumber: event.target.value ? Number(event.target.value) : undefined,
-                      })
                     }
                     className="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs outline-none focus:border-[#18312a]"
                   />
@@ -592,21 +556,6 @@ export default function BoardOfTrusteesPage() {
                 )}
               </div>
 
-              {/* Description / Biography */}
-              <div className="space-y-1">
-                <label className="block text-xs font-bold text-stone-800">
-                  Brief Biography / Portfolio <span className="font-normal text-stone-500">(optional)</span>
-                </label>
-                <textarea
-                  rows={2}
-                  placeholder="Summary of portfolio, qualifications, and mandate..."
-                  value={editingLeader.description}
-                  onChange={(event) =>
-                    setEditingLeader({ ...editingLeader, description: event.target.value })
-                  }
-                  className="w-full resize-none rounded-xl border border-stone-300 px-3 py-2 text-xs outline-none focus:border-[#18312a]"
-                />
-              </div>
             </form>
 
             {/* Modal Footer: ALWAYS VISIBLE AND STICKY AT BOTTOM */}
