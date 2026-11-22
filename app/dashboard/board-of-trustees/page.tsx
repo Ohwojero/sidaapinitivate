@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Pencil, Plus, Trash2, X, Users, ShieldCheck, Sparkles, Loader2 } from 'lucide-react'
+import { Pencil, Plus, Trash2, X, Users, ShieldCheck, Sparkles, Loader2, Phone, MapPin, Hash } from 'lucide-react'
 import {
   getStoredLeadership,
   fetchStoredLeadership,
@@ -12,6 +12,7 @@ import {
 } from '@/lib/data/leadership-data'
 import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { compressImageFile } from '@/lib/utils'
+import { NIGERIA_STATES } from '@/lib/data/nigeria-data'
 
 export default function BoardOfTrusteesPage() {
   const [leadership, setLeadership] = useState<LeadershipMember[]>([])
@@ -126,6 +127,9 @@ export default function BoardOfTrusteesPage() {
       description: '',
       image: '',
       initials: '',
+      phone: '',
+      state: '',
+      positionNumber: undefined,
     })
   }
 
@@ -304,6 +308,27 @@ export default function BoardOfTrusteesPage() {
                       <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#52720e]">
                         {leader.role}
                       </p>
+                      {(leader.state || leader.phone || leader.positionNumber) && (
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-stone-600">
+                          {leader.positionNumber && (
+                            <span className="font-mono font-bold text-stone-600 bg-stone-100 px-1.5 py-0.5 rounded border border-stone-200">
+                              #{leader.positionNumber}
+                            </span>
+                          )}
+                          {leader.state && (
+                            <span className="inline-flex items-center gap-1 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 px-1.5 py-0.5 font-medium">
+                              <MapPin className="h-3 w-3 text-emerald-600" />
+                              {leader.state}
+                            </span>
+                          )}
+                          {leader.phone && (
+                            <span className="inline-flex items-center gap-1 rounded bg-stone-100 px-1.5 py-0.5 border border-stone-200">
+                              <Phone className="h-3 w-3 text-stone-500" />
+                              {leader.phone}
+                            </span>
+                          )}
+                        </div>
+                      )}
                       {leader.description ? (
                         <p className="mt-3 text-xs leading-relaxed text-[#718079]">
                           {leader.description}
@@ -447,13 +472,71 @@ export default function BoardOfTrusteesPage() {
                 </label>
                 <input
                   required
-                  placeholder="e.g. Board Secretary, Trustee & Director, etc."
+                  placeholder="e.g. Founder & Chairman, Board Secretary, National Director, etc."
                   value={editingLeader.role}
                   onChange={(event) =>
                     setEditingLeader({ ...editingLeader, role: event.target.value })
                   }
                   className="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs outline-none focus:border-[#18312a]"
                 />
+              </div>
+
+              {/* Number, State & Position Rank Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-stone-800 flex items-center gap-1">
+                    <Phone className="h-3 w-3 text-stone-500" />
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="0803 000 0000"
+                    value={editingLeader.phone || ''}
+                    onChange={(event) =>
+                      setEditingLeader({ ...editingLeader, phone: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs outline-none focus:border-[#18312a]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-stone-800 flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-stone-500" />
+                    Assigned / Origin State
+                  </label>
+                  <select
+                    value={editingLeader.state || ''}
+                    onChange={(event) =>
+                      setEditingLeader({ ...editingLeader, state: event.target.value })
+                    }
+                    className="w-full rounded-xl border border-stone-300 bg-white px-3 py-2 text-xs outline-none focus:border-[#18312a]"
+                  >
+                    <option value="">-- National / Select State --</option>
+                    {NIGERIA_STATES.map((s) => (
+                      <option key={s.name} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-bold text-stone-800 flex items-center gap-1">
+                    <Hash className="h-3 w-3 text-stone-500" />
+                    Position / Rank No.
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1, 2, 3..."
+                    value={editingLeader.positionNumber ?? ''}
+                    onChange={(event) =>
+                      setEditingLeader({
+                        ...editingLeader,
+                        positionNumber: event.target.value ? Number(event.target.value) : undefined,
+                      })
+                    }
+                    className="w-full rounded-xl border border-stone-300 px-3 py-2 text-xs outline-none focus:border-[#18312a]"
+                  />
+                </div>
               </div>
 
               {/* GOVERNANCE BODY SELECTION */}

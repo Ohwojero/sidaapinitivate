@@ -38,6 +38,14 @@ import { isSupabaseConfigured } from '@/lib/supabase/client'
 import { compressImageFile } from '@/lib/utils'
 import { NIGERIA_STATES } from '@/lib/data/nigeria-data'
 import {
+  LeadershipMember,
+  fetchStoredLeadership,
+  getStoredLeadership,
+  saveStoredLeadership,
+  deleteStoredLeadership,
+  DEFAULT_LEADERSHIP_BODIES,
+} from '@/lib/data/leadership-data'
+import {
   ShieldCheck,
   Building2,
   Users,
@@ -69,6 +77,9 @@ import {
   Image as ImageIcon,
   Sparkles,
   Plus,
+  Phone,
+  Hash,
+  Loader2,
 } from 'lucide-react'
 
 export default function NationalDirectorDashboard() {
@@ -82,13 +93,34 @@ export default function NationalDirectorDashboard() {
   const [searchMemberQuery, setSearchMemberQuery] = useState('')
   const [noticeMessage, setNoticeMessage] = useState('')
 
-  // Modals
+  // National Executive Leaders State
+  const [nationalLeaders, setNationalLeaders] = useState<LeadershipMember[]>(getStoredLeadership)
+  const [showNationalLeaderModal, setShowNationalLeaderModal] = useState(false)
+  const [isEditingNationalLeader, setIsEditingNationalLeader] = useState(false)
+  const [isSavingNationalLeader, setIsSavingNationalLeader] = useState(false)
+  const [isCompressingNationalPortrait, setIsCompressingNationalPortrait] = useState(false)
+  const [nationalLeaderForm, setNationalLeaderForm] = useState<LeadershipMember>({
+    id: '',
+    name: '',
+    role: 'National Executive Director',
+    body: 'Executive Directorate',
+    description: '',
+    image: '',
+    initials: '',
+    phone: '',
+    state: 'Abuja (FCT)',
+    positionNumber: undefined,
+  })
+
+  // Modals for State Directors
   const [showAddDirectorModal, setShowAddDirectorModal] = useState(false)
   const [isCreatingDirector, setIsCreatingDirector] = useState(false)
+  const [isCompressingDirectorPhoto, setIsCompressingDirectorPhoto] = useState(false)
   const [directorCreationError, setDirectorCreationError] = useState('')
   const [showBroadcastModal, setShowBroadcastModal] = useState(false)
   const [isBroadcasting, setIsBroadcasting] = useState(false)
   const [editingDirector, setEditingDirector] = useState<StateDirector | null>(null)
+  const [isCompressingEditDirectorPhoto, setIsCompressingEditDirectorPhoto] = useState(false)
   const [deletingDirector, setDeletingDirector] = useState<StateDirector | null>(null)
   const [createdCredentialsNotice, setCreatedCredentialsNotice] = useState<{
     name: string
@@ -136,12 +168,25 @@ export default function NationalDirectorDashboard() {
     fetchDirectives().then(setDirectives)
     setPrograms(getStoredPrograms())
     fetchStoredPrograms().then(setPrograms)
+    fetchStoredLeadership().then(setNationalLeaders)
 
     const handleProgUpdate = () => {
       setPrograms(getStoredPrograms())
     }
+    const handleLeadershipUpdate = () => {
+      setNationalLeaders(getStoredLeadership())
+    }
+    const handleDirectorsUpdate = () => {
+      setDirectors(getStoredDirectors())
+    }
     window.addEventListener('sidaap_programs_updated', handleProgUpdate)
-    return () => window.removeEventListener('sidaap_programs_updated', handleProgUpdate)
+    window.addEventListener('sidaap_leadership_updated', handleLeadershipUpdate)
+    window.addEventListener('sidaap_directors_updated', handleDirectorsUpdate)
+    return () => {
+      window.removeEventListener('sidaap_programs_updated', handleProgUpdate)
+      window.removeEventListener('sidaap_leadership_updated', handleLeadershipUpdate)
+      window.removeEventListener('sidaap_directors_updated', handleDirectorsUpdate)
+    }
   }, [])
 
   // Add Director Form State
@@ -153,7 +198,9 @@ export default function NationalDirectorDashboard() {
     state: 'Katsina',
     lga: '',
     city: '',
-    avatarUrl: ''
+    avatarUrl: '',
+    position: 'State Director',
+    positionNumber: '' as string | number,
   })
 
   // Broadcast Directive Form State
@@ -167,6 +214,67 @@ export default function NationalDirectorDashboard() {
 
   // Dynamic LGAs for selected director state
   const availableDirectorLgas = NIGERIA_STATES.find(s => s.name === newDirector.state)?.lgas || []
+
+  // National Leader Handlers
+  const openAddNationalLeader = () => {
+    setIsEditingNationalLeader(false)
+    setNationalLeaderForm({
+      id: `leader-${crypto.randomUUID()}`,
+      name: '',
+      role: 'National Executive Director',
+      body: 'Executive Directorate',
+      description: '',
+      image: '',
+      initials: '',
+      phone: '',
+      state: 'Abuja (FCT)',
+      positionNumber: nationalLeaders.length + 1,
+    })
+    setShowNationalLeaderModal(true)
+  }
+
+  const openEditNationalLeader = (leader: LeadershipMember) => {
+    setIsEditingNationalLeader(true)
+    setNationalLeaderForm({ ...leader })
+    setShowNationalLeaderModal(true)
+  }
+
+  const handleSaveNationalLeader = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSavingNationalLeader(true)
+    try {
+      const initials = nationalLeaderForm.name
+        .split(/\s+/)
+        .map((p) => p[0])
+        .join('')
+        .slice(0, 2)
+        .toUpperCase() || 'ND'
+      const updated: LeadershipMember = {
+        ...nationalLeaderForm,
+        initials,
+        body: nationalLeaderForm.body || 'Executive Directorate',
+      }
+      const list = await saveStoredLeadership(updated)
+      setNationalLeaders(list)
+      setShowNationalLeaderModal(false)
+      notify(`National Leader ${updated.name} saved successfully`)
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Could not save national leader')
+    } finally {
+      setIsSavingNationalLeader(false)
+    }
+  }
+
+  const handleDeleteNationalLeader = async (leader: LeadershipMember) => {
+    if (!window.confirm(`Delete ${leader.name}? This will remove them from the National Executive Council.`)) return
+    try {
+      const list = await deleteStoredLeadership(leader.id)
+      setNationalLeaders(list)
+      notify(`${leader.name} removed`)
+    } catch (err) {
+      notify('Could not delete member')
+    }
+  }
 
   // Add State Director Handler
   const handleAddDirector = async (e: React.FormEvent) => {
@@ -187,7 +295,9 @@ export default function NationalDirectorDashboard() {
       staffCount: 0,
       facilitiesCount: 0,
       outreachCount: 0,
-      avatarUrl: newDirector.avatarUrl || undefined
+      avatarUrl: newDirector.avatarUrl || undefined,
+      position: newDirector.position.trim() || 'State Director',
+      positionNumber: newDirector.positionNumber ? Number(newDirector.positionNumber) : undefined,
     }
     const newUser = {
       id: `user-${created.id}`,
@@ -198,7 +308,7 @@ export default function NationalDirectorDashboard() {
       state: created.state,
       lga: created.lga,
       city: created.city,
-      title: `${created.state} State Director`,
+      title: newDirector.position.trim() || `${created.state} State Director`,
       avatarInitials: created.name.split(' ').map(n => n[0]).join('').slice(0, 2),
       avatarUrl: created.avatarUrl || ''
     }
@@ -214,7 +324,18 @@ export default function NationalDirectorDashboard() {
       })
 
       setShowAddDirectorModal(false)
-      setNewDirector({ name: '', email: '', password: 'sidaap2026', phone: '', state: 'Katsina', lga: '', city: '', avatarUrl: '' })
+      setNewDirector({
+        name: '',
+        email: '',
+        password: 'sidaap2026',
+        phone: '',
+        state: 'Katsina',
+        lga: '',
+        city: '',
+        avatarUrl: '',
+        position: 'State Director',
+        positionNumber: '',
+      })
       notify(`State Director appointed for ${created.state}`)
     } catch (error) {
       const message = error instanceof Error
@@ -229,11 +350,11 @@ export default function NationalDirectorDashboard() {
   }
 
   // Edit Director Handler
-  const handleEditDirector = (e: React.FormEvent) => {
+  const handleEditDirector = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!editingDirector) return
     setDirectors(prev => prev.map(d => d.id === editingDirector.id ? editingDirector : d))
-    updateDirector(editingDirector)
+    await updateDirector(editingDirector)
     setEditingDirector(null)
     notify('Director details updated')
   }
@@ -469,10 +590,26 @@ export default function NationalDirectorDashboard() {
           <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <button
               type="button"
-              onClick={openAddProgram}
+              onClick={openAddNationalLeader}
               className="flex items-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1f3a33] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition shadow"
             >
-              <CalendarDays className="h-4 w-4 text-[#c9ec63]" />
+              <Users className="h-4 w-4 text-[#c9ec63]" />
+              Add National Director
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAddDirectorModal(true)}
+              className="flex items-center gap-2 rounded-xl bg-[#c9ec63] hover:bg-[#bde250] text-[#13231f] px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition shadow font-bold"
+            >
+              <PlusCircle className="h-4 w-4" />
+              Appoint State Director
+            </button>
+            <button
+              type="button"
+              onClick={openAddProgram}
+              className="flex items-center gap-2 rounded-xl bg-white hover:bg-stone-50 text-[#13231f] px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition border border-stone-300 shadow-sm"
+            >
+              <CalendarDays className="h-4 w-4 text-emerald-700" />
               Add Program
             </button>
             <button
@@ -482,14 +619,6 @@ export default function NationalDirectorDashboard() {
             >
               <Megaphone className="h-4 w-4 text-emerald-700" />
               Broadcast Directive
-            </button>
-            <button
-              type="button"
-              onClick={() => setShowAddDirectorModal(true)}
-              className="flex items-center gap-2 rounded-xl bg-[#c9ec63] hover:bg-[#bde250] text-[#13231f] px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition shadow"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Appoint State Director
             </button>
           </div>
         </div>
@@ -751,6 +880,88 @@ export default function NationalDirectorDashboard() {
           )}
         </div>
 
+        {/* SECTION 0: NATIONAL EXECUTIVE DIRECTORS (NATIONAL LEADERSHIP) */}
+        <div id="national-directors" className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm scroll-mt-24">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
+            <div>
+              <span className="font-mono text-xs uppercase font-bold text-emerald-800">
+                National Executive Governance &bull; CAC RN: 8390984
+              </span>
+              <h2 className="text-2xl font-bold text-stone-900 mt-1">
+                National Executive Directorate
+              </h2>
+              <p className="text-xs text-stone-500">
+                Manage National Directors and Executive Council officers with statutory position titles, contact numbers, and assigned states.
+              </p>
+            </div>
+            <button
+              onClick={openAddNationalLeader}
+              className="flex items-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1d3730] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider transition shadow"
+            >
+              <Users className="h-4 w-4 text-[#c9ec63]" />
+              Add National Director
+            </button>
+          </div>
+
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {nationalLeaders.length === 0 ? (
+              <div className="col-span-full py-10 text-center text-xs text-stone-500 bg-stone-50 rounded-2xl border border-dashed border-stone-200">
+                No national leadership members recorded yet. Click &ldquo;Add National Director&rdquo; above.
+              </div>
+            ) : (
+              nationalLeaders.map((leader) => (
+                <div key={leader.id} className="rounded-2xl border border-stone-200 bg-stone-50 overflow-hidden flex flex-col justify-between shadow-xs">
+                  <div className="p-4 flex items-start gap-3">
+                    <div className="h-16 w-16 rounded-xl bg-[#13231f] flex-shrink-0 overflow-hidden border border-stone-200">
+                      {leader.image ? (
+                        <img src={leader.image} alt={leader.name} className="h-full w-full object-cover object-top" />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center font-bold text-white text-base">
+                          {leader.initials}
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {leader.positionNumber && (
+                          <span className="font-mono text-[10px] font-bold bg-stone-200 text-stone-700 px-1.5 py-0.5 rounded">
+                            #{leader.positionNumber}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                          {leader.body || 'Executive'}
+                        </span>
+                      </div>
+                      <h4 className="text-sm font-bold text-stone-900 mt-1 truncate">{leader.name}</h4>
+                      <p className="text-xs font-semibold text-emerald-900 leading-tight mt-0.5">{leader.role}</p>
+                      <div className="mt-1 flex flex-wrap gap-2 text-[11px] text-stone-500">
+                        {leader.state && <span>📍 {leader.state}</span>}
+                        {leader.phone && <span>📞 {leader.phone}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="px-4 py-2 bg-white border-t border-stone-200 flex items-center justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEditNationalLeader(leader)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-2.5 py-1 text-xs font-bold text-stone-700 hover:bg-stone-50"
+                    >
+                      <Pencil className="h-3 w-3" /> Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteNationalLeader(leader)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-2.5 py-1 text-xs font-bold text-red-600 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3 w-3" /> Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
         {/* SECTION 1: APPOINTED STATE DIRECTORS (NATIONAL ONLY CAN ADD!) */}
         <div id="state-directors" className="rounded-3xl bg-white border border-stone-200 p-6 sm:p-8 shadow-sm scroll-mt-24">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-stone-200">
@@ -828,6 +1039,9 @@ export default function NationalDirectorDashboard() {
                         )}
                         <div>
                           <div className="font-bold text-sm text-stone-900">{d.name}</div>
+                          <div className="text-[11px] font-semibold text-emerald-800">
+                            {d.position || 'State Director'} {d.positionNumber ? `• Rank #${d.positionNumber}` : ''}
+                          </div>
                           <div className="text-[10px] text-stone-400 font-mono">Appointed: {d.appointedDate}</div>
                         </div>
                       </div>
@@ -1316,10 +1530,210 @@ export default function NationalDirectorDashboard() {
         </div>
       )}
 
+      {/* Modal: Add / Edit National Leader */}
+      {showNationalLeaderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white text-stone-900 shadow-2xl p-6 sm:p-8 border border-stone-200 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-4 border-b border-stone-200">
+              <div>
+                <span className="font-mono text-[10px] uppercase font-bold text-emerald-800">
+                  Statutory Power &bull; Executive Council
+                </span>
+                <h3 className="text-lg font-bold text-stone-900">
+                  {isEditingNationalLeader ? 'Edit National Director' : 'Add National Director'}
+                </h3>
+              </div>
+              <button
+                onClick={() => setShowNationalLeaderModal(false)}
+                className="rounded-full p-1.5 text-stone-400 hover:text-stone-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNationalLeader} className="mt-4 space-y-3.5 text-xs">
+              {/* Photo Upload */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Portrait Photo (Optional)</label>
+                <div className="flex items-center gap-3">
+                  <div className="h-16 w-16 rounded-xl bg-stone-100 border border-stone-300 overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {nationalLeaderForm.image ? (
+                      <img src={nationalLeaderForm.image} alt="Preview" className="h-full w-full object-cover object-top" />
+                    ) : (
+                      <ImageIcon className="h-6 w-6 text-stone-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isCompressingNationalPortrait}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setIsCompressingNationalPortrait(true)
+                        void compressImageFile(file, 400, 400, 0.72)
+                          .then((img) => setNationalLeaderForm(prev => ({ ...prev, image: img })))
+                          .catch((err) => notify(err instanceof Error ? err.message : 'Photo processing error'))
+                          .finally(() => setIsCompressingNationalPortrait(false))
+                      }}
+                      className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#13231f] file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-[#1d3730]"
+                    />
+                    {nationalLeaderForm.image && (
+                      <button
+                        type="button"
+                        onClick={() => setNationalLeaderForm(prev => ({ ...prev, image: '' }))}
+                        className="text-[11px] text-red-600 hover:underline mt-1 block"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Full Name */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">
+                  Full Name &amp; Titles <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Chief Steven Ahans"
+                  value={nationalLeaderForm.name}
+                  onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, name: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
+                />
+              </div>
+
+              {/* Position / Role */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">
+                  Position / Role Title <span className="text-red-500">*</span>
+                </label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Board Vice Chairman and National Director of Ethics and Disciplinary"
+                  value={nationalLeaderForm.role}
+                  onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, role: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
+                />
+              </div>
+
+              {/* Phone, State & Position Rank */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                    <Phone className="h-3 w-3 text-stone-500" />
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="0803 000 0000"
+                    value={nationalLeaderForm.phone || ''}
+                    onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, phone: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                    <MapPin className="h-3 w-3 text-stone-500" />
+                    State
+                  </label>
+                  <select
+                    value={nationalLeaderForm.state || ''}
+                    onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, state: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
+                  >
+                    <option value="">-- National / None --</option>
+                    {NIGERIA_STATES.map((s) => (
+                      <option key={s.name} value={s.name}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                    <Hash className="h-3 w-3 text-stone-500" />
+                    Position / Rank No.
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1, 2, 3..."
+                    value={nationalLeaderForm.positionNumber ?? ''}
+                    onChange={(e) => setNationalLeaderForm({
+                      ...nationalLeaderForm,
+                      positionNumber: e.target.value ? Number(e.target.value) : undefined
+                    })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
+                  />
+                </div>
+              </div>
+
+              {/* Leadership Body */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Governance / Executive Body</label>
+                <select
+                  value={nationalLeaderForm.body || 'Executive Directorate'}
+                  onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, body: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
+                >
+                  <option value="Executive Directorate">Executive Directorate</option>
+                  <option value="Board of Trustees">Board of Trustees</option>
+                  <option value="Advisory Council">Advisory Council</option>
+                  <option value="Patrons & Elders">Patrons & Elders</option>
+                </select>
+              </div>
+
+              {/* Brief Biography */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Brief Biography / Portfolio (Optional)</label>
+                <textarea
+                  rows={2}
+                  placeholder="Brief summary of duties and portfolio..."
+                  value={nationalLeaderForm.description || ''}
+                  onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowNationalLeaderModal(false)}
+                  className="flex-1 rounded-xl border border-stone-300 py-3 text-xs font-bold uppercase text-stone-700 hover:bg-stone-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingNationalLeader || isCompressingNationalPortrait}
+                  className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1d3730] text-white py-3 text-xs font-bold uppercase tracking-wider transition shadow disabled:opacity-50"
+                >
+                  {isSavingNationalLeader ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin text-[#c9ec63]" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="h-4 w-4 text-[#c9ec63]" />
+                      {isEditingNationalLeader ? 'Save Changes' : 'Appoint National Leader'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Modal: Appoint State Director */}
       {showAddDirectorModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl bg-white text-stone-900 shadow-2xl p-6 sm:p-8 border border-stone-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white text-stone-900 shadow-2xl p-6 sm:p-8 border border-stone-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-stone-200">
               <div>
                 <span className="font-mono text-[10px] uppercase font-bold text-emerald-800">
@@ -1343,34 +1757,93 @@ export default function NationalDirectorDashboard() {
               </div>
             )}
 
-            <form onSubmit={handleAddDirector} className="mt-4 space-y-3 text-xs">
+            <form onSubmit={handleAddDirector} className="mt-4 space-y-3.5 text-xs">
+              {/* Photo Upload */}
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Full Name &amp; Title</label>
+                <label className="block font-bold text-stone-700 mb-1">Director Portrait (Optional)</label>
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-xl bg-stone-100 border border-stone-300 overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {newDirector.avatarUrl ? (
+                      <img src={newDirector.avatarUrl} alt="Preview" className="h-full w-full object-cover object-top" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-stone-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isCompressingDirectorPhoto}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setIsCompressingDirectorPhoto(true)
+                        void compressImageFile(file, 400, 400, 0.75)
+                          .then((img) => setNewDirector(prev => ({ ...prev, avatarUrl: img })))
+                          .catch((err) => notify(err instanceof Error ? err.message : 'Photo processing error'))
+                          .finally(() => setIsCompressingDirectorPhoto(false))
+                      }}
+                      className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#13231f] file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-[#1d3730]"
+                    />
+                    {newDirector.avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setNewDirector(prev => ({ ...prev, avatarUrl: '' }))}
+                        className="text-[11px] text-red-600 hover:underline mt-0.5 block"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Full Name &amp; Title <span className="text-red-500">*</span></label>
                 <input
                   required
                   type="text"
-                  placeholder="e.g. Dr. Haruna Bello"
+                  placeholder="e.g. Amb EFe Gold Anthony"
                   value={newDirector.name}
                   onChange={(e) => setNewDirector({ ...newDirector, name: e.target.value })}
                   className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Official Email</label>
+              {/* Position / Title & Position Rank Number */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-stone-700 mb-1">Position / Role Title <span className="text-red-500">*</span></label>
                   <input
                     required
-                    type="email"
-                    placeholder="katsina.dir@sidaap.org"
-                    value={newDirector.email}
-                    onChange={(e) => setNewDirector({ ...newDirector, email: e.target.value })}
+                    type="text"
+                    placeholder="e.g. Delta State Director, or Publicity Secretary and State Director"
+                    value={newDirector.position}
+                    onChange={(e) => setNewDirector({ ...newDirector, position: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Phone Number</label>
+                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                    <Hash className="h-3 w-3 text-stone-500" />
+                    Rank No.
+                  </label>
                   <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1, 2..."
+                    value={newDirector.positionNumber}
+                    onChange={(e) => setNewDirector({ ...newDirector, positionNumber: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Phone Number <span className="text-red-500">*</span></label>
+                  <input
+                    required
                     type="tel"
                     placeholder="0803 000 0000"
                     value={newDirector.phone}
@@ -1378,10 +1851,21 @@ export default function NationalDirectorDashboard() {
                     className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
                   />
                 </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Official Email <span className="text-red-500">*</span></label>
+                  <input
+                    required
+                    type="email"
+                    placeholder="state.dir@sidaap.org"
+                    value={newDirector.email}
+                    onChange={(e) => setNewDirector({ ...newDirector, email: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">Assigned Nigerian State</label>
+                <label className="block font-bold text-stone-700 mb-1">Assigned Nigerian State <span className="text-red-500">*</span></label>
                 <select
                   value={newDirector.state}
                   onChange={(e) => {
@@ -1419,7 +1903,7 @@ export default function NationalDirectorDashboard() {
                   <label className="block font-bold text-stone-700 mb-1">Secretariat City</label>
                   <input
                     type="text"
-                    placeholder="e.g. Katsina Central"
+                    placeholder="e.g. Asaba / Ikeja"
                     value={newDirector.city}
                     onChange={(e) => setNewDirector({ ...newDirector, city: e.target.value })}
                     className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
@@ -1441,7 +1925,7 @@ export default function NationalDirectorDashboard() {
               <div className="pt-2">
                 <button
                   type="submit"
-                  disabled={isCreatingDirector}
+                  disabled={isCreatingDirector || isCompressingDirectorPhoto}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#13231f] hover:bg-[#1d3730] text-white py-3 text-xs font-bold uppercase tracking-wider transition shadow disabled:opacity-50"
                 >
                   <ShieldCheck className="h-4 w-4 text-[#c9ec63]" />
@@ -1487,12 +1971,52 @@ export default function NationalDirectorDashboard() {
       {/* Modal: Edit State Director */}
       {editingDirector && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="relative w-full max-w-lg rounded-3xl bg-white text-stone-900 shadow-2xl p-6 sm:p-8 border border-stone-200">
+          <div className="relative w-full max-w-lg rounded-3xl bg-white text-stone-900 shadow-2xl p-6 sm:p-8 border border-stone-200 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-4 border-b border-stone-200">
               <h3 className="text-lg font-bold text-stone-900">Edit State Director Record</h3>
               <button onClick={() => setEditingDirector(null)} className="rounded-full p-1.5 text-stone-400 hover:text-stone-700"><X className="h-5 w-5" /></button>
             </div>
-            <form onSubmit={handleEditDirector} className="mt-4 space-y-3 text-xs">
+            <form onSubmit={handleEditDirector} className="mt-4 space-y-3.5 text-xs">
+              {/* Photo Upload */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Director Portrait (Optional)</label>
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 rounded-xl bg-stone-100 border border-stone-300 overflow-hidden flex items-center justify-center flex-shrink-0">
+                    {editingDirector.avatarUrl ? (
+                      <img src={editingDirector.avatarUrl} alt="Preview" className="h-full w-full object-cover object-top" />
+                    ) : (
+                      <ImageIcon className="h-5 w-5 text-stone-400" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      disabled={isCompressingEditDirectorPhoto}
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (!file) return
+                        setIsCompressingEditDirectorPhoto(true)
+                        void compressImageFile(file, 400, 400, 0.75)
+                          .then((img) => setEditingDirector(prev => prev ? { ...prev, avatarUrl: img } : prev))
+                          .catch((err) => notify(err instanceof Error ? err.message : 'Photo processing error'))
+                          .finally(() => setIsCompressingEditDirectorPhoto(false))
+                      }}
+                      className="block w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#13231f] file:px-2.5 file:py-1 file:text-xs file:font-bold file:text-white hover:file:bg-[#1d3730]"
+                    />
+                    {editingDirector.avatarUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingDirector(prev => prev ? { ...prev, avatarUrl: undefined } : prev)}
+                        className="text-[11px] text-red-600 hover:underline mt-0.5 block"
+                      >
+                        Remove Photo
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Director Name</label>
                 <input
@@ -1503,9 +2027,40 @@ export default function NationalDirectorDashboard() {
                   className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
                 />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="sm:col-span-2">
+                  <label className="block font-bold text-stone-700 mb-1">Position / Role Title</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. State Director"
+                    value={editingDirector.position || ''}
+                    onChange={(e) => setEditingDirector({ ...editingDirector, position: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                    <Hash className="h-3 w-3 text-stone-500" />
+                    Rank No.
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    placeholder="e.g. 1, 2..."
+                    value={editingDirector.positionNumber ?? ''}
+                    onChange={(e) => setEditingDirector({
+                      ...editingDirector,
+                      positionNumber: e.target.value ? Number(e.target.value) : undefined
+                    })}
+                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-bold text-stone-700 mb-1">Phone</label>
+                  <label className="block font-bold text-stone-700 mb-1">Phone Number</label>
                   <input
                     type="tel"
                     value={editingDirector.phone}
@@ -1526,9 +2081,23 @@ export default function NationalDirectorDashboard() {
                   </select>
                 </div>
               </div>
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Assigned State</label>
+                <select
+                  value={editingDirector.state}
+                  onChange={(e) => setEditingDirector({ ...editingDirector, state: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs"
+                >
+                  {NIGERIA_STATES.map((s) => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+
               <div className="pt-2 flex gap-3">
                 <button type="button" onClick={() => setEditingDirector(null)} className="flex-1 rounded-xl border border-stone-300 text-stone-700 py-3 text-xs font-bold uppercase tracking-wider hover:bg-stone-50">Cancel</button>
-                <button type="submit" className="flex-1 rounded-xl bg-[#13231f] text-white py-3 text-xs font-bold uppercase tracking-wider shadow">Save Changes</button>
+                <button type="submit" disabled={isCompressingEditDirectorPhoto} className="flex-1 rounded-xl bg-[#13231f] text-white py-3 text-xs font-bold uppercase tracking-wider shadow">Save Changes</button>
               </div>
             </form>
           </div>

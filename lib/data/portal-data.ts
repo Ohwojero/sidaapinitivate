@@ -14,6 +14,8 @@ export interface StateDirector {
   facilitiesCount: number
   outreachCount: number
   avatarUrl?: string
+  position?: string
+  positionNumber?: number
 }
 
 export interface StateStaffMember {

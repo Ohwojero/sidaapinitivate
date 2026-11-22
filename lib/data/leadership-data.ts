@@ -6,10 +6,13 @@ export interface LeadershipMember {
   id: string
   name: string
   role: string
-  body?: string // 'Board of Trustees' | 'Advisory Council' | 'Patrons & Elders' | etc.
+  body?: string // 'Board of Trustees' | 'Advisory Council' | 'Patrons & Elders' | 'Executive Directorate' | etc.
   description: string
   image: string
   initials: string
+  phone?: string
+  state?: string
+  positionNumber?: number
 }
 
 export const DEFAULT_LEADERSHIP_BODIES = [
@@ -140,7 +143,7 @@ export async function saveStoredLeadership(member: LeadershipMember): Promise<Le
 
   const supabase = createClient()
   if (supabase) {
-    // 1. Try upserting directly with the body column
+    // 1. Try upserting directly with all columns
     let { error } = await supabase.from('leadership').upsert({
       id: memberWithBody.id,
       name: memberWithBody.name,
@@ -149,13 +152,21 @@ export async function saveStoredLeadership(member: LeadershipMember): Promise<Le
       description: memberWithBody.description || '',
       image: memberWithBody.image || null,
       initials: memberWithBody.initials,
+      phone: memberWithBody.phone || null,
+      state: memberWithBody.state || null,
+      position_number: memberWithBody.positionNumber !== undefined ? memberWithBody.positionNumber : null,
     }, { onConflict: 'id' })
 
-    // 2. If the 'body' column does not exist yet in the database schema, fallback to embedding body metadata in description
-    if (error && (error.message?.includes('body') || (error as any).code === 'PGRST204')) {
-      const embeddedDescription = memberWithBody.body && memberWithBody.body !== 'Board of Trustees'
-        ? `<!--body:${memberWithBody.body}-->${memberWithBody.description || ''}`
-        : memberWithBody.description || ''
+    // 2. If new columns do not exist yet in the database schema, fallback to embedding metadata in description
+    if (error && (error.message?.includes('column') || (error as any).code === 'PGRST204')) {
+      const metaTags: string[] = []
+      if (memberWithBody.body && memberWithBody.body !== 'Board of Trustees') metaTags.push(`body:${memberWithBody.body}`)
+      if (memberWithBody.phone) metaTags.push(`phone:${memberWithBody.phone}`)
+      if (memberWithBody.state) metaTags.push(`state:${memberWithBody.state}`)
+      if (memberWithBody.positionNumber !== undefined) metaTags.push(`posnum:${memberWithBody.positionNumber}`)
+
+      const metaPrefix = metaTags.length > 0 ? `<!--meta:${metaTags.join('|')}-->` : ''
+      const embeddedDescription = `${metaPrefix}${memberWithBody.description || ''}`
 
       const fallbackRes = await supabase.from('leadership').upsert({
         id: memberWithBody.id,
@@ -213,6 +224,26 @@ export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
     const leadership = data.map((item: any): LeadershipMember => {
       let body = item.body
       let description = item.description || ''
+      let phone = item.phone || undefined
+      let state = item.state || undefined
+      let positionNumber = item.position_number !== undefined && item.position_number !== null ? Number(item.position_number) : undefined
+
+      // Parse metadata from description if present
+      const metaMatch = description.match(/<!--meta:(.*?)-->/)
+      if (metaMatch) {
+        const metaStr = metaMatch[1]
+        description = description.replace(/<!--meta:.*?-->/, '').trim()
+        const parts = metaStr.split('|')
+        for (const part of parts) {
+          const [k, ...v] = part.split(':')
+          const val = v.join(':')
+          if (k === 'body' && !body) body = val
+          if (k === 'phone' && !phone) phone = val
+          if (k === 'state' && !state) state = val
+          if (k === 'posnum' && positionNumber === undefined) positionNumber = Number(val)
+        }
+      }
+
       if (!body) {
         const bodyMatch = description.match(/<!--body:(.*?)-->/) || description.match(/^\[Body:\s*(.*?)\]/)
         if (bodyMatch) {
@@ -230,6 +261,9 @@ export async function fetchStoredLeadership(): Promise<LeadershipMember[]> {
         description,
         image: item.image ?? '',
         initials: item.initials || item.name.split(/\s+/).map((p: string) => p[0]).join('').slice(0, 2).toUpperCase(),
+        phone,
+        state,
+        positionNumber,
       }
     })
     if (leadership.length > 0) {

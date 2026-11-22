@@ -44,8 +44,14 @@ create table if not exists public.state_directors (
   facilities_count  integer not null default 0,
   outreach_count    integer not null default 0,
   avatar_url        text,
+  position          text default 'State Director',
+  position_number   integer default 0,
   created_at        timestamptz not null default now()
 );
+
+-- Migration for state_directors:
+alter table if exists public.state_directors add column if not exists position text default 'State Director';
+alter table if exists public.state_directors add column if not exists position_number integer default 0;
 
 create index if not exists state_directors_state_idx on public.state_directors (state);
 
@@ -150,18 +156,24 @@ create index if not exists chat_messages_room_id_idx on public.chat_messages (ro
 
 -- ── 8. BOARD OF TRUSTEES / LEADERSHIP ────────────────────────────────────────
 create table if not exists public.leadership (
-  id           text primary key,
-  name         text not null,
-  role         text not null,
-  body         text default 'Board of Trustees',
-  description  text not null,
-  image        text,
-  initials     text not null,
-  created_at   timestamptz not null default now()
+  id               text primary key,
+  name             text not null,
+  role             text not null,
+  body             text default 'Board of Trustees',
+  description      text not null,
+  image            text,
+  initials         text not null,
+  phone            text,
+  state            text,
+  position_number  integer default 0,
+  created_at       timestamptz not null default now()
 );
 
 -- Migration if leadership table already exists:
 alter table if exists public.leadership add column if not exists body text default 'Board of Trustees';
+alter table if exists public.leadership add column if not exists phone text;
+alter table if exists public.leadership add column if not exists state text;
+alter table if exists public.leadership add column if not exists position_number integer default 0;
 
 insert into public.leadership (id, name, role, description, image, initials)
 values

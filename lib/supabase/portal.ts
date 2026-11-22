@@ -91,7 +91,9 @@ export async function fetchDirectors(): Promise<StateDirector[]> {
       staffCount: d.staff_count,
       facilitiesCount: d.facilities_count,
       outreachCount: d.outreach_count,
-      avatarUrl: d.avatar_url ?? undefined
+      avatarUrl: d.avatar_url ?? undefined,
+      position: d.position ?? 'State Director',
+      positionNumber: d.position_number !== undefined && d.position_number !== null ? Number(d.position_number) : undefined
     }))
     saveStoredDirectors(directors)
     return directors
@@ -108,7 +110,7 @@ export async function updateDirector(director: StateDirector): Promise<void> {
   const supabase = createClient()
   if (!supabase) return
   try {
-    await supabase.from('state_directors').update({
+    let { error } = await supabase.from('state_directors').update({
       name: director.name,
       email: director.email,
       phone: director.phone || null,
@@ -116,8 +118,23 @@ export async function updateDirector(director: StateDirector): Promise<void> {
       lga: director.lga || null,
       city: director.city || null,
       status: director.status,
-      avatar_url: director.avatarUrl || null
+      avatar_url: director.avatarUrl || null,
+      position: director.position || 'State Director',
+      position_number: director.positionNumber !== undefined ? director.positionNumber : null,
     }).eq('id', director.id)
+
+    if (error && (error.message?.includes('column') || (error as any).code === 'PGRST204')) {
+      await supabase.from('state_directors').update({
+        name: director.name,
+        email: director.email,
+        phone: director.phone || null,
+        state: director.state,
+        lga: director.lga || null,
+        city: director.city || null,
+        status: director.status,
+        avatar_url: director.avatarUrl || null,
+      }).eq('id', director.id)
+    }
 
     // Also update the linked user account
     await supabase.from('users').update({
@@ -127,7 +144,9 @@ export async function updateDirector(director: StateDirector): Promise<void> {
       state: director.state,
       lga: director.lga || null,
       city: director.city || null,
-      avatar_initials: director.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase()
+      title: director.position || `${director.state} State Director`,
+      avatar_initials: director.name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase(),
+      avatar_url: director.avatarUrl || null,
     }).eq('email', director.email)
   } catch (err) {
     console.error('[sidaap:portal] updateDirector error', err)
@@ -156,7 +175,7 @@ export async function addDirector(director: StateDirector, user: AuthUser): Prom
 
   const supabase = createClient()
   if (!supabase) return
-  const { error } = await supabase.from('state_directors').upsert({
+  let { error } = await supabase.from('state_directors').upsert({
       id: director.id,
       name: director.name,
       email: director.email,
@@ -169,8 +188,30 @@ export async function addDirector(director: StateDirector, user: AuthUser): Prom
       staff_count: director.staffCount,
       facilities_count: director.facilitiesCount,
       outreach_count: director.outreachCount,
-      avatar_url: director.avatarUrl || null
+      avatar_url: director.avatarUrl || null,
+      position: director.position || 'State Director',
+      position_number: director.positionNumber !== undefined ? director.positionNumber : null,
     }, { onConflict: 'id' })
+
+  if (error && (error.message?.includes('column') || (error as any).code === 'PGRST204')) {
+    const fallbackRes = await supabase.from('state_directors').upsert({
+      id: director.id,
+      name: director.name,
+      email: director.email,
+      phone: director.phone || null,
+      state: director.state,
+      lga: director.lga || null,
+      city: director.city || null,
+      appointed_date: director.appointedDate,
+      status: director.status,
+      staff_count: director.staffCount,
+      facilities_count: director.facilitiesCount,
+      outreach_count: director.outreachCount,
+      avatar_url: director.avatarUrl || null,
+    }, { onConflict: 'id' })
+    error = fallbackRes.error
+  }
+
   if (error) throw error
 
   await syncUserToSupabase(user)

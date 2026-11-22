@@ -157,7 +157,7 @@ export default function AboutPage() {
 
         {/* SECTION 1: NATIONAL DIRECTOR & EXECUTIVE LEADERSHIP */}
         <div id="national-director" className="mt-16 rounded-3xl bg-white border border-stone-200 p-8 sm:p-12 shadow-sm scroll-mt-24">
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-stone-200">
+          <div className="pb-6 border-b border-stone-200">
             <div>
               <span className="font-mono text-xs uppercase font-bold tracking-wider text-emerald-800">
                 Executive Leadership
@@ -169,13 +169,6 @@ export default function AboutPage() {
                 Providing strategic vision, national liaison with federal security institutions, and operational oversight for substance prevention nationwide.
               </p>
             </div>
-            <Link
-              href="/dashboard/national"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#13231f] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-[#1d3730] transition self-start sm:self-auto"
-            >
-              <ShieldCheck className="h-4 w-4 text-[#c9ec63]" />
-              National Operations Portal
-            </Link>
           </div>
 
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
