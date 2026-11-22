@@ -108,7 +108,7 @@ export default function NationalDirectorDashboard() {
     image: '',
     initials: '',
     phone: '',
-    state: 'Abuja (FCT)',
+    state: '',
     positionNumber: undefined,
   })
 
@@ -146,7 +146,7 @@ export default function NationalDirectorDashboard() {
     status: 'past' as 'past' | 'upcoming' | 'ongoing',
     date: new Date().toISOString().split('T')[0],
     category: PROGRAM_CATEGORIES[0],
-    state: 'Abuja (FCT)',
+    state: '',
     location: '',
     description: '',
     mainImage: '',
@@ -228,7 +228,7 @@ export default function NationalDirectorDashboard() {
       initials: '',
       phone: '',
       state: 'Abuja (FCT)',
-      positionNumber: nationalLeaders.length + 1,
+      positionNumber: undefined,
     })
     setShowNationalLeaderModal(true)
   }
@@ -1622,8 +1622,8 @@ export default function NationalDirectorDashboard() {
                 />
               </div>
 
-              {/* Phone, State & Position Rank */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              {/* Phone and State */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
                     <Phone className="h-3 w-3 text-stone-500" />
@@ -1640,7 +1640,7 @@ export default function NationalDirectorDashboard() {
                 <div>
                   <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
                     <MapPin className="h-3 w-3 text-stone-500" />
-                    State
+                    State <span className="font-normal text-stone-500">(optional)</span>
                   </label>
                   <select
                     value={nationalLeaderForm.state || ''}
@@ -1653,50 +1653,6 @@ export default function NationalDirectorDashboard() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
-                    <Hash className="h-3 w-3 text-stone-500" />
-                    Position / Rank No.
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 1, 2, 3..."
-                    value={nationalLeaderForm.positionNumber ?? ''}
-                    onChange={(e) => setNationalLeaderForm({
-                      ...nationalLeaderForm,
-                      positionNumber: e.target.value ? Number(e.target.value) : undefined
-                    })}
-                    className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
-                  />
-                </div>
-              </div>
-
-              {/* Leadership Body */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">Governance / Executive Body</label>
-                <select
-                  value={nationalLeaderForm.body || 'Executive Directorate'}
-                  onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, body: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
-                >
-                  <option value="Executive Directorate">Executive Directorate</option>
-                  <option value="Board of Trustees">Board of Trustees</option>
-                  <option value="Advisory Council">Advisory Council</option>
-                  <option value="Patrons & Elders">Patrons & Elders</option>
-                </select>
-              </div>
-
-              {/* Brief Biography */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">Brief Biography / Portfolio (Optional)</label>
-                <textarea
-                  rows={2}
-                  placeholder="Brief summary of duties and portfolio..."
-                  value={nationalLeaderForm.description || ''}
-                  onChange={(e) => setNationalLeaderForm({ ...nationalLeaderForm, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
-                />
               </div>
 
               <div className="pt-2 flex items-center gap-3">
