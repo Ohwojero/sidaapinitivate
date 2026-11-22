@@ -135,11 +135,9 @@ export default function HomePage() {
     }
   }, [])
 
-  // Dynamic slides for the NEW executive carousel:
-  // Includes Chairman/Founder, Vice Chairman, Secretary, Executive Directors, and State Directors
+  // The hero carousel contains Board of Trustees members only.
   const carouselSlides = useMemo(() => {
-    // Official ranking order for executive roles
-    const getExecutiveRank = (l: LeadershipMember) => {
+    const getTrusteeRank = (l: LeadershipMember) => {
       const r = (l.role || '').toLowerCase()
       if (r.includes('founder') || (r.includes('chairman') && !r.includes('vice'))) return 1
       if (r.includes('vice chairman') || r.includes('vice-chairman')) return 2
@@ -147,50 +145,22 @@ export default function HomePage() {
       if (r.includes('publicity secretary') || r.includes('publicity')) return 4
       if (r.includes('treasurer')) return 5
       if (r.includes('auditor')) return 6
-      if (r.includes('director') || r.includes('welfare') || r.includes('ethics')) return 7
+      if (r.includes('director')) return 7
       return 10
     }
 
-    // Only include executive / director officers in the hero carousel (not pure non-executive trustees)
-    const executiveLeaders = leadership
-      .filter((l) => {
-        const r = (l.role || '').toLowerCase()
-        const b = (l.body || '').toLowerCase()
-        return (
-          r.includes('founder') ||
-          r.includes('chairman') ||
-          r.includes('secretary') ||
-          r.includes('treasurer') ||
-          r.includes('auditor') ||
-          r.includes('director') ||
-          b.includes('executive')
-        )
-      })
-      .sort((a, b) => getExecutiveRank(a) - getExecutiveRank(b))
-
-    const slides = [
-      ...executiveLeaders.map((leader) => ({
+    return leadership
+      .filter((leader) => (leader.body || '').trim().toLowerCase() === 'board of trustees')
+      .sort((a, b) => getTrusteeRank(a) - getTrusteeRank(b))
+      .map((leader) => ({
         id: `leader-${leader.id}`,
         name: leader.name,
         role: leader.role,
         area: getPositionBadge(leader.role, leader.body),
         image: getCarouselImage(leader.image),
         initials: leader.initials || 'SL',
-      })),
-      ...stateDirectors
-        .filter((d) => d.status === 'active')
-        .map((d) => ({
-          id: `state-${d.id}`,
-          name: d.name,
-          role: 'State Director',
-          area: `${d.state} State Director`,
-          image: getCarouselImage(d.avatarUrl),
-          initials: d.name.split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase(),
-        })),
-    ]
-
-    return slides
-  }, [leadership, stateDirectors])
+      }))
+  }, [leadership])
 
   // Autoplay timer
   useEffect(() => {
@@ -283,7 +253,7 @@ export default function HomePage() {
               <div className="absolute inset-x-4 top-4 z-20 flex items-center justify-between pointer-events-none">
                 <span className="inline-flex items-center gap-2 rounded-full bg-black/50 backdrop-blur-md px-3.5 py-1.5 border border-white/20 text-white shadow-lg text-[11px] font-bold uppercase tracking-wider">
                   <span className="h-2 w-2 rounded-full bg-[#c9ec63] animate-pulse" />
-                  SIDAAP Leadership
+                  Board of Trustees
                 </span>
                 <span className="rounded-full bg-black/50 backdrop-blur-md px-3 py-1 font-mono text-xs font-bold text-[#c9ec63] border border-white/20 shadow-lg">
                   {String(activeSlide + 1).padStart(2, '0')} / {String(carouselSlides.length).padStart(2, '0')}
@@ -433,21 +403,41 @@ export default function HomePage() {
 
           {/* Cards Grid: Shows full portraits cleanly without cropping face/hat */}
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {leadership.map((leader) => {
+            {leadership
+              .filter((leader) => (leader.body || 'Board of Trustees').trim().toLowerCase() === 'board of trustees')
+              .map((leader) => {
               const body = leader.body || 'Board of Trustees'
               return (
                 <article
                   key={leader.id}
-                  className="group flex flex-col overflow-hidden rounded-2xl border border-[#18312a]/10 bg-white shadow-sm transition hover:shadow-md"
+                  className="trustee-3d-card group relative flex flex-col overflow-hidden rounded-[1.75rem] border border-white/70 bg-white shadow-[0_18px_50px_-28px_rgba(24,49,42,.55)]"
+                  onMouseMove={(event) => {
+                    const card = event.currentTarget
+                    const rect = card.getBoundingClientRect()
+                    const x = (event.clientX - rect.left) / rect.width - 0.5
+                    const y = (event.clientY - rect.top) / rect.height - 0.5
+                    card.style.setProperty('--tilt-x', `${y * -8}deg`)
+                    card.style.setProperty('--tilt-y', `${x * 8}deg`)
+                    card.style.setProperty('--glow-x', `${(x + 0.5) * 100}%`)
+                    card.style.setProperty('--glow-y', `${(y + 0.5) * 100}%`)
+                  }}
+                  onMouseLeave={(event) => {
+                    event.currentTarget.style.setProperty('--tilt-x', '0deg')
+                    event.currentTarget.style.setProperty('--tilt-y', '0deg')
+                    event.currentTarget.style.setProperty('--glow-x', '50%')
+                    event.currentTarget.style.setProperty('--glow-y', '50%')
+                  }}
                 >
-                  <div className="relative h-64 sm:h-72 w-full bg-[#18312a] overflow-hidden">
+                  <div className="absolute inset-0 z-20 pointer-events-none opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[radial-gradient(circle_at_var(--glow-x)_var(--glow-y),rgba(201,236,99,.32),transparent_32%)]" />
+                  <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-gradient-to-br from-[#18312a] via-[#203e35] to-[#52720e]">
+                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#102019]/70 via-transparent to-white/5" />
                     {leader.image ? (
                       <img
                         src={leader.image}
                         alt={leader.name}
                         loading="eager"
                         decoding="sync"
-                        className="h-full w-full object-cover object-top transition duration-300 group-hover:scale-105"
+                        className="h-full w-full object-cover object-top transition duration-700 ease-out group-hover:scale-[1.08]"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center bg-gradient-to-br from-[#18312a] to-[#2b4c41]">
@@ -456,21 +446,22 @@ export default function HomePage() {
                         </span>
                       </div>
                     )}
-                    <div className="absolute left-3 top-3">
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50/95 border border-emerald-300 px-2.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wide text-emerald-800 backdrop-blur-sm shadow-sm">
+                    <div className="absolute left-4 top-4 z-20">
+                      <span className="inline-flex items-center gap-1 rounded-full border border-[#c9ec63]/50 bg-[#18312a]/85 px-3 py-1 text-[9px] font-extrabold uppercase tracking-[0.12em] text-[#d8f58a] backdrop-blur-md shadow-lg">
                         <Sparkles className="h-2.5 w-2.5" />
                         {body}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex flex-1 flex-col p-5">
-                    <h3 className="text-base font-bold text-stone-900 leading-snug">{leader.name}</h3>
-                    <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#52720e]">
+                  <div className="relative z-10 flex flex-1 flex-col p-6">
+                    <div className="mb-4 h-1 w-12 rounded-full bg-[#c9ec63] transition-all duration-500 group-hover:w-20" />
+                    <h3 className="text-xl font-extrabold text-[#18312a] leading-tight">{leader.name}</h3>
+                    <p className="mt-2 text-[11px] font-black uppercase tracking-[0.13em] text-[#52720e]">
                       {leader.role}
                     </p>
                     {leader.description && (
-                      <p className="mt-3 text-xs leading-relaxed text-[#718079] line-clamp-3">
+                      <p className="mt-4 text-sm leading-6 text-[#64756f] line-clamp-3">
                         {leader.description}
                       </p>
                     )}

@@ -283,15 +283,20 @@ export default function NationalDirectorDashboard() {
     e.preventDefault()
     setIsCreatingDirector(true)
     setDirectorCreationError('')
-    const password = newDirector.password || 'sidaap2026'
+    const stateSlug = newDirector.state.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const nameSlug = newDirector.name.toLower().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '')
+    const generatedEmail = nameSlug ? `${nameSlug}.${stateSlug}@sidaap.org` : `${stateSlug}.director@sidaap.org`
+    const password = 'sidaap2026'
+    const lga = availableDirectorLgas[0] || 'Central LGA'
+    const city = `${newDirector.state} Central`
     const created: StateDirector = {
       id: `dir-${Date.now()}`,
       name: newDirector.name,
-      email: newDirector.email,
+      email: generatedEmail,
       phone: newDirector.phone,
       state: newDirector.state,
-      lga: newDirector.lga || availableDirectorLgas[0] || 'Central LGA',
-      city: newDirector.city || `${newDirector.state} Central`,
+      lga,
+      city,
       appointedDate: 'Today',
       status: 'active',
       staffCount: 0,
@@ -299,7 +304,7 @@ export default function NationalDirectorDashboard() {
       outreachCount: 0,
       avatarUrl: newDirector.avatarUrl || undefined,
       position: newDirector.position.trim() || 'State Director',
-      positionNumber: newDirector.positionNumber ? Number(newDirector.positionNumber) : undefined,
+      positionNumber: undefined,
     }
     const newUser = {
       id: `user-${created.id}`,
@@ -1787,58 +1792,28 @@ export default function NationalDirectorDashboard() {
                 />
               </div>
 
-              {/* Position / Title & Position Rank Number */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="sm:col-span-2">
-                  <label className="block font-bold text-stone-700 mb-1">Position / Role Title <span className="text-red-500">*</span></label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="e.g. Delta State Director, or Publicity Secretary and State Director"
-                    value={newDirector.position}
-                    onChange={(e) => setNewDirector({ ...newDirector, position: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
-                    <Hash className="h-3 w-3 text-stone-500" />
-                    Rank No.
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 1, 2..."
-                    value={newDirector.positionNumber}
-                    onChange={(e) => setNewDirector({ ...newDirector, positionNumber: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white outline-none focus:border-[#13231f]"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Position / Role Title <span className="text-red-500">*</span></label>
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Delta State Director, or Publicity Secretary and State Director"
+                  value={newDirector.position}
+                  onChange={(e) => setNewDirector({ ...newDirector, position: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Phone Number <span className="text-red-500">*</span></label>
-                  <input
-                    required
-                    type="tel"
-                    placeholder="0803 000 0000"
-                    value={newDirector.phone}
-                    onChange={(e) => setNewDirector({ ...newDirector, phone: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Official Email <span className="text-red-500">*</span></label>
-                  <input
-                    required
-                    type="email"
-                    placeholder="state.dir@sidaap.org"
-                    value={newDirector.email}
-                    onChange={(e) => setNewDirector({ ...newDirector, email: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
-                  />
-                </div>
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Phone Number <span className="text-red-500">*</span></label>
+                <input
+                  required
+                  type="tel"
+                  placeholder="0803 000 0000"
+                  value={newDirector.phone}
+                  onChange={(e) => setNewDirector({ ...newDirector, phone: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
+                />
               </div>
 
               <div>
@@ -1861,42 +1836,6 @@ export default function NationalDirectorDashboard() {
                     <option key={s.name} value={s.name} className="text-stone-900 bg-white">{s.name}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">State Secretariat LGA</label>
-                  <select
-                    value={newDirector.lga}
-                    onChange={(e) => setNewDirector({ ...newDirector, lga: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white font-medium outline-none focus:border-[#13231f]"
-                  >
-                    {availableDirectorLgas.map((lga) => (
-                      <option key={lga} value={lga} className="text-stone-900 bg-white">{lga}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Secretariat City</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Asaba / Ikeja"
-                    value={newDirector.city}
-                    onChange={(e) => setNewDirector({ ...newDirector, city: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white placeholder:text-stone-400 outline-none focus:border-[#13231f]"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">Initial Password for Portal Login</label>
-                <input
-                  required
-                  type="text"
-                  value={newDirector.password}
-                  onChange={(e) => setNewDirector({ ...newDirector, password: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-stone-300 text-xs text-stone-900 bg-white font-mono outline-none focus:border-[#13231f]"
-                />
               </div>
 
               <div className="pt-2">
