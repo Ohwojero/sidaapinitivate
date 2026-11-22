@@ -284,8 +284,11 @@ export default function NationalDirectorDashboard() {
     setIsCreatingDirector(true)
     setDirectorCreationError('')
     const stateSlug = newDirector.state.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-    const nameSlug = newDirector.name.toLower().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '')
-    const generatedEmail = nameSlug ? `${nameSlug}.${stateSlug}@sidaap.org` : `${stateSlug}.director@sidaap.org`
+    const nameSlug = newDirector.name.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '')
+    const uniqueSuffix = Date.now().toString().slice(-6)
+    const generatedEmail = nameSlug
+      ? `${nameSlug}.${stateSlug}.${uniqueSuffix}@sidaap.org`
+      : `${stateSlug}.director.${uniqueSuffix}@sidaap.org`
     const password = 'sidaap2026'
     const lga = availableDirectorLgas[0] || 'Central LGA'
     const city = `${newDirector.state} Central`
