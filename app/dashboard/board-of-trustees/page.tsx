@@ -18,7 +18,6 @@ export default function BoardOfTrusteesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [editingLeader, setEditingLeader] = useState<LeadershipMember | null>(null)
   const [isAddingLeader, setIsAddingLeader] = useState(false)
-  const [selectedBodyFilter, setSelectedBodyFilter] = useState<string>('All')
   const [customBodyInput, setCustomBodyInput] = useState('')
   const [isCustomBody, setIsCustomBody] = useState(false)
   const [deletingLeaderId, setDeletingLeaderId] = useState<string | null>(null)
@@ -76,12 +75,6 @@ export default function BoardOfTrusteesPage() {
     return Array.from(set)
   }, [leadership])
 
-  // Filtered members by body
-  const filteredLeadership = useMemo(() => {
-    if (selectedBodyFilter === 'All') return leadership
-    return leadership.filter((m) => (m.body || 'Board of Trustees') === selectedBodyFilter)
-  }, [leadership, selectedBodyFilter])
-
   const saveLeader = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!editingLeader) return
@@ -129,7 +122,7 @@ export default function BoardOfTrusteesPage() {
       id: `leader-${crypto.randomUUID()}`,
       name: '',
       role: 'Trustee',
-      body: selectedBodyFilter !== 'All' ? selectedBodyFilter : 'Board of Trustees',
+      body: 'Board of Trustees',
       description: '',
       image: '',
       initials: '',
@@ -231,45 +224,6 @@ export default function BoardOfTrusteesPage() {
           </div>
         </div>
 
-        {/* Filter Tabs by Governance Body */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-b border-[#18312a]/10 pb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-bold text-[#718079] mr-1">Body Filter:</span>
-            <button
-              type="button"
-              onClick={() => setSelectedBodyFilter('All')}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                selectedBodyFilter === 'All'
-                  ? 'bg-[#18312a] text-white shadow'
-                  : 'bg-white text-[#18312a] border border-[#18312a]/15 hover:bg-[#18312a]/5'
-              }`}
-            >
-              All Bodies ({leadership.length})
-            </button>
-            {availableBodies.map((body) => {
-              const count = leadership.filter((m) => (m.body || 'Board of Trustees') === body).length
-              return (
-                <button
-                  key={body}
-                  type="button"
-                  onClick={() => setSelectedBodyFilter(body)}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                    selectedBodyFilter === body
-                      ? 'bg-[#18312a] text-white shadow'
-                      : 'bg-white text-[#18312a] border border-[#18312a]/15 hover:bg-[#18312a]/5'
-                  }`}
-                >
-                  {body} ({count})
-                </button>
-              )
-            })}
-          </div>
-
-          <div className="text-xs font-mono text-[#718079]">
-            Showing <strong>{filteredLeadership.length}</strong> of {leadership.length} members
-          </div>
-        </div>
-
         {/* Loading State Skeleton (Prevents Initials from Flashing Before Images Load) */}
         {isLoading ? (
           <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -288,12 +242,12 @@ export default function BoardOfTrusteesPage() {
               </div>
             ))}
           </div>
-        ) : filteredLeadership.length === 0 ? (
+        ) : leadership.length === 0 ? (
           <div className="mt-12 rounded-2xl border border-dashed border-[#18312a]/20 bg-white p-12 text-center">
             <Users className="mx-auto h-12 w-12 text-stone-300" />
-            <h3 className="mt-4 text-base font-bold">No members found in {selectedBodyFilter}</h3>
+            <h3 className="mt-4 text-base font-bold">No leadership members recorded</h3>
             <p className="mt-1 text-xs text-[#718079]">
-              Add appointed members to this body using the button above.
+              Add appointed members using the button above.
             </p>
             <button
               onClick={addLeader}
@@ -305,8 +259,8 @@ export default function BoardOfTrusteesPage() {
           </div>
         ) : (
           /* Members Grid - NOT a Carousel, Shows Image Straight */
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredLeadership.map((leader) => {
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {leadership.map((leader) => {
               const body = leader.body || 'Board of Trustees'
               return (
                 <article

@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { fetchStoredLeadership, getStoredLeadership, LeadershipMember } from '@/lib/data/leadership-data'
+import { getStoredDirectors, StateDirector } from '@/lib/data/portal-data'
+import { fetchDirectors } from '@/lib/supabase/portal'
 import {
   ShieldCheck,
   HeartHandshake,
@@ -14,18 +16,29 @@ import {
   Scale,
   Sparkles,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  MapPin,
+  Phone,
 } from 'lucide-react'
 
 export default function AboutPage() {
   const [leaders, setLeaders] = useState<LeadershipMember[]>(getStoredLeadership)
+  const [stateDirectors, setStateDirectors] = useState<StateDirector[]>(getStoredDirectors)
 
   useEffect(() => {
-    const refresh = () => setLeaders(getStoredLeadership())
+    const refresh = () => {
+      setLeaders(getStoredLeadership())
+      setStateDirectors(getStoredDirectors())
+    }
     refresh()
     fetchStoredLeadership().then(setLeaders)
+    fetchDirectors().then(setStateDirectors)
     window.addEventListener('sidaap_leadership_updated', refresh)
-    return () => window.removeEventListener('sidaap_leadership_updated', refresh)
+    window.addEventListener('sidaap_directors_updated', refresh)
+    return () => {
+      window.removeEventListener('sidaap_leadership_updated', refresh)
+      window.removeEventListener('sidaap_directors_updated', refresh)
+    }
   }, [])
 
   return (
@@ -142,46 +155,177 @@ export default function AboutPage() {
           </div>
         </div>
 
-        {/* Board of Trustees Section */}
-        <div className="mt-16 rounded-3xl bg-[#13231f] text-white p-8 sm:p-14 relative overflow-hidden">
+        {/* SECTION 1: NATIONAL DIRECTOR & EXECUTIVE LEADERSHIP */}
+        <div id="national-director" className="mt-16 rounded-3xl bg-white border border-stone-200 p-8 sm:p-12 shadow-sm scroll-mt-24">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-stone-200">
+            <div>
+              <span className="font-mono text-xs uppercase font-bold tracking-wider text-emerald-800">
+                Executive Leadership
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900 mt-1">
+                National Director &amp; Executive Council
+              </h2>
+              <p className="text-sm text-stone-600 mt-2 max-w-2xl">
+                Providing strategic vision, national liaison with federal security institutions, and operational oversight for substance prevention nationwide.
+              </p>
+            </div>
+            <Link
+              href="/dashboard/national"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#13231f] text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-[#1d3730] transition self-start sm:self-auto"
+            >
+              <ShieldCheck className="h-4 w-4 text-[#c9ec63]" />
+              National Operations Portal
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {leaders
+              .filter((l) => {
+                const r = l.role.toLowerCase()
+                return (
+                  r.includes('founder') ||
+                  r.includes('chairman') ||
+                  r.includes('secretary') ||
+                  r.includes('treasurer') ||
+                  r.includes('director') ||
+                  r.includes('auditor')
+                )
+              })
+              .map((leader) => (
+                <article key={leader.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
+                  <div className="relative h-60 bg-[#13231f] overflow-hidden">
+                    {leader.image ? (
+                      <img src={leader.image} alt={leader.name} className="h-full w-full object-cover object-top" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-[#c9ec63] text-xl font-black text-[#13231f]">
+                          {leader.initials}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <h3 className="text-base font-bold text-stone-900 leading-snug">{leader.name}</h3>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-wider text-emerald-800">
+                      {leader.role}
+                    </p>
+                    {leader.description && (
+                      <p className="mt-2 text-xs text-stone-600 leading-relaxed line-clamp-3">
+                        {leader.description}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              ))}
+          </div>
+        </div>
+
+        {/* SECTION 2: BOARD OF TRUSTEES (STATUTORY GOVERNANCE) */}
+        <div id="board-of-trustees" className="mt-16 rounded-3xl bg-[#13231f] text-white p-8 sm:p-14 relative overflow-hidden scroll-mt-24">
           <div className="relative z-10">
             <span className="font-mono text-xs uppercase tracking-widest text-[#c9ec63]">
               Statutory Governance &bull; CAC RN: 8390984
             </span>
             <h2 className="text-3xl sm:text-4xl font-bold tracking-tight mt-2 text-white">
-              Board of Trustees &amp; Executive Leadership
+              Board of Trustees
             </h2>
             <p className="mt-3 text-sm text-[#b6c4b9] max-w-2xl leading-relaxed">
-              Duly appointed under the Companies and Allied Matters Act 2020 to steward the organisation’s mission, legal compliance, and national expansion.
+              Duly appointed under the Companies and Allied Matters Act 2020 to steward the organisation’s mission, fiduciary accountability, legal compliance, and national expansion.
             </p>
 
             <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {leaders.map((leader) => (
-                <article key={leader.name} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]">
-                  <div className="relative h-52 bg-[#0c1614]">
+                <article key={leader.id} className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]">
+                  <div className="relative h-60 bg-[#0c1614] overflow-hidden">
                     {leader.image ? (
                       <img src={leader.image} alt={leader.name} className="h-full w-full object-cover object-top" />
                     ) : (
                       <div className="flex h-full items-center justify-center">
-                        <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-[#c9ec63]/50 bg-[#c9ec63] text-2xl font-black text-[#13231f]">
+                        <div className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#c9ec63]/50 bg-[#c9ec63] text-xl font-black text-[#13231f]">
                           {leader.initials}
                         </div>
                       </div>
                     )}
                     <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0c1614] to-transparent" />
+                    <div className="absolute left-3 top-3">
+                      <span className="inline-flex items-center rounded-full bg-emerald-500/20 border border-[#c9ec63]/40 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-[#c9ec63] backdrop-blur-sm">
+                        {leader.body || 'Board of Trustees'}
+                      </span>
+                    </div>
                   </div>
                   <div className="p-5">
-                    <h3 className="text-lg font-bold text-white">{leader.name}</h3>
-                    <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-[#c9ec63]">
+                    <h3 className="text-base font-bold text-white">{leader.name}</h3>
+                    <p className="mt-1 text-xs font-bold uppercase tracking-wider text-[#c9ec63]">
                       {leader.role}
                     </p>
-                    <p className="mt-3 border-t border-white/10 pt-3 text-xs leading-relaxed text-[#b6c4b9]">
-                      {leader.description}
-                    </p>
+                    {leader.description && (
+                      <p className="mt-3 border-t border-white/10 pt-3 text-xs leading-relaxed text-[#b6c4b9]">
+                        {leader.description}
+                      </p>
+                    )}
                   </div>
                 </article>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* SECTION 3: APPOINTED STATE DIRECTORS DIRECTORY */}
+        <div id="state-directors" className="mt-16 rounded-3xl bg-white border border-stone-200 p-8 sm:p-12 shadow-sm scroll-mt-24">
+          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 pb-6 border-b border-stone-200">
+            <div>
+              <span className="font-mono text-xs uppercase font-bold tracking-wider text-blue-800">
+                Field Coordination
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-stone-900 mt-1">
+                Appointed State Directors
+              </h2>
+              <p className="text-sm text-stone-600 mt-2 max-w-2xl">
+                Serving across all 36 States and the Federal Capital Territory to establish school drug-free clubs, mobilize LGA teams, and triage community rehabilitation referrals.
+              </p>
+            </div>
+            <Link
+              href="/find-help"
+              className="inline-flex items-center gap-2 rounded-xl bg-blue-900 text-white px-4 py-2.5 text-xs font-bold uppercase tracking-wider hover:bg-blue-950 transition self-start sm:self-auto"
+            >
+              <MapPin className="h-4 w-4 text-[#c9ec63]" />
+              Find State Coordinators
+            </Link>
+          </div>
+
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {stateDirectors
+              .filter((d) => d.status === 'active')
+              .map((director) => (
+                <article key={director.id} className="overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
+                  <div className="h-52 bg-[#13231f] overflow-hidden">
+                    {director.avatarUrl ? (
+                      <img src={director.avatarUrl} alt={director.name} className="h-full w-full object-cover object-top" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center">
+                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-[#c9ec63] text-lg font-black text-[#13231f]">
+                          {director.name.split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-blue-800">
+                      {director.state} State
+                    </p>
+                    <h3 className="mt-1 text-base font-bold text-stone-900">{director.name}</h3>
+                    <p className="mt-0.5 text-xs text-stone-500">
+                      State Director &bull; {director.lga} LGA
+                    </p>
+                    {director.phone && (
+                      <p className="mt-3 pt-3 border-t border-stone-200 text-xs text-stone-600 flex items-center gap-1.5 font-mono">
+                        <Phone className="h-3.5 w-3.5 text-emerald-700" />
+                        {director.phone}
+                      </p>
+                    )}
+                  </div>
+                </article>
+              ))}
           </div>
         </div>
 

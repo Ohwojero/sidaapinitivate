@@ -430,6 +430,7 @@ export function saveStoredDirectors(directors: StateDirector[]): void {
   if (typeof window === 'undefined') return
   try {
     localStorage.setItem(DIRECTORS_KEY, JSON.stringify(directors))
+    window.dispatchEvent(new Event('sidaap_directors_updated'))
   } catch (err) {
     console.error('Failed to save stored directors', err)
   }

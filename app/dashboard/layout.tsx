@@ -30,7 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [user, setUser] = useState<AuthUser | null>(null)
-  const [leadershipOpen, setLeadershipOpen] = useState(false)
+  const [leadershipOpen, setLeadershipOpen] = useState(true)
 
   useEffect(() => {
     const updateUser = () => {
@@ -156,28 +156,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <ChevronDown className={`h-4 w-4 transition-transform ${leadershipOpen ? 'rotate-180' : ''}`} />
               </button>
               {leadershipOpen && (
-                <div className="ml-3 mt-1 border-l border-white/15 pl-3">
+                <div className="ml-3 mt-1 space-y-1 border-l border-white/15 pl-3">
+                  <Link
+                    href="/dashboard/national"
+                    onClick={() => setSidebarOpen(false)}
+                    className={`block rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                      pathname === '/dashboard/national'
+                        ? 'bg-[#c9ec63] font-bold text-[#18312a]'
+                        : 'text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                  >
+                    National Director
+                  </Link>
+                  <Link
+                    href="/dashboard/national#state-directors"
+                    onClick={() => setSidebarOpen(false)}
+                    className="block rounded-lg px-3 py-2 text-xs font-semibold text-white/70 transition hover:bg-white/10 hover:text-white"
+                  >
+                    State Directors
+                  </Link>
                   <Link
                     href="/dashboard/board-of-trustees"
                     onClick={() => setSidebarOpen(false)}
-                    className={`block rounded-lg px-3 py-2.5 text-sm ${
+                    className={`block rounded-lg px-3 py-2 text-xs font-semibold transition ${
                       pathname === '/dashboard/board-of-trustees'
                         ? 'bg-[#c9ec63] font-bold text-[#18312a]'
                         : 'text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     Board of Trustees
-                  </Link>
-                  <Link
-                    href="/dashboard/national#state-directors"
-                    onClick={() => setSidebarOpen(false)}
-                    className={`mt-1 block rounded-lg px-3 py-2.5 text-sm ${
-                      pathname === '/dashboard/national'
-                        ? 'text-white/70 hover:bg-white/10 hover:text-white'
-                        : 'text-white/70 hover:bg-white/10 hover:text-white'
-                    }`}
-                  >
-                    State Directors
                   </Link>
                 </div>
               )}

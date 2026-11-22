@@ -116,7 +116,6 @@ export default function HomePage() {
   const [stateDirectors, setStateDirectors] = useState<StateDirector[]>(getStoredDirectors)
   const [leadership, setLeadership] = useState<LeadershipMember[]>(getStoredLeadership)
   const [activeSlide, setActiveSlide] = useState(0)
-  const [selectedPublicBody, setSelectedPublicBody] = useState<string>('All')
   const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
@@ -128,9 +127,11 @@ export default function HomePage() {
     void fetchStoredLeadership().then(setLeadership)
     window.addEventListener('storage', refresh)
     window.addEventListener('sidaap_leadership_updated', refreshLeadership)
+    window.addEventListener('sidaap_directors_updated', refresh)
     return () => {
       window.removeEventListener('storage', refresh)
       window.removeEventListener('sidaap_leadership_updated', refreshLeadership)
+      window.removeEventListener('sidaap_directors_updated', refresh)
     }
   }, [])
 
@@ -211,20 +212,6 @@ export default function HomePage() {
   }
 
   const activeProfile = carouselSlides[activeSlide]
-
-  // Distinct bodies for the statutory governance grid section
-  const availablePublicBodies = useMemo(() => {
-    const set = new Set<string>()
-    leadership.forEach((m) => {
-      if (m.body && m.body.trim()) set.add(m.body.trim())
-    })
-    return Array.from(set)
-  }, [leadership])
-
-  const filteredPublicLeadership = useMemo(() => {
-    if (selectedPublicBody === 'All') return leadership
-    return leadership.filter((m) => (m.body || 'Board of Trustees') === selectedPublicBody)
-  }, [leadership, selectedPublicBody])
 
   return (
     <main className="min-h-screen bg-[#f7f5ef] text-[#18312a]">
@@ -442,41 +429,11 @@ export default function HomePage() {
                 Duly appointed custodians of SIDAAP&apos;s institutional integrity, national drug-demand reduction policies, and fiduciary stewardship under the Companies and Allied Matters Act.
               </p>
             </div>
-            {availablePublicBodies.length > 1 && (
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-[#718079]">Filter Body:</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPublicBody('All')}
-                  className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                    selectedPublicBody === 'All'
-                      ? 'bg-[#18312a] text-white shadow'
-                      : 'bg-white text-[#18312a] border border-[#18312a]/15 hover:bg-[#18312a]/5'
-                  }`}
-                >
-                  All Bodies
-                </button>
-                {availablePublicBodies.map((body) => (
-                  <button
-                    key={body}
-                    type="button"
-                    onClick={() => setSelectedPublicBody(body)}
-                    className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${
-                      selectedPublicBody === body
-                        ? 'bg-[#18312a] text-white shadow'
-                        : 'bg-white text-[#18312a] border border-[#18312a]/15 hover:bg-[#18312a]/5'
-                    }`}
-                  >
-                    {body}
-                  </button>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Cards Grid: Shows full portraits cleanly without cropping face/hat */}
           <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredPublicLeadership.map((leader) => {
+            {leadership.map((leader) => {
               const body = leader.body || 'Board of Trustees'
               return (
                 <article
