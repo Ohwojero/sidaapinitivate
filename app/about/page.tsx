@@ -307,7 +307,7 @@ export default function AboutPage() {
                     </p>
                     <h3 className="mt-1 text-base font-bold text-stone-900">{director.name}</h3>
                     <p className="mt-0.5 text-xs text-stone-500">
-                      State Director &bull; {director.lga} LGA
+                      State Director
                     </p>
                     {director.phone && (
                       <p className="mt-3 pt-3 border-t border-stone-200 text-xs text-stone-600 flex items-center gap-1.5 font-mono">

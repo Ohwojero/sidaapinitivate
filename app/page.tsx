@@ -506,7 +506,7 @@ export default function HomePage() {
                   <div className="p-5">
                     <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#52720e]">{director.state} State</p>
                     <h3 className="mt-2 text-lg font-bold">{director.name}</h3>
-                    <p className="mt-1 text-sm text-[#718079]">State Director &bull; {director.lga} LGA</p>
+                    <p className="mt-1 text-sm text-[#718079]">State Director</p>
                   </div>
                 </article>
               ))}
