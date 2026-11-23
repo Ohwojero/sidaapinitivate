@@ -209,7 +209,7 @@ export default function ProgramsPage() {
                       <img
                         src={item.mainImage}
                         alt={item.title}
-                        className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
+                        className="h-full w-full object-contain"
                       />
                     ) : (
                       <div className="flex h-full flex-col items-center justify-center gap-2 text-white/60">
@@ -345,7 +345,7 @@ export default function ProgramsPage() {
                           <img
                             src={activePhoto}
                             alt={selectedProgram.title}
-                            className="h-full w-full object-cover object-top"
+                            className="h-full w-full object-contain"
                           />
                         ) : (
                           <div className="flex h-full flex-col items-center justify-center gap-3 text-white/60">
