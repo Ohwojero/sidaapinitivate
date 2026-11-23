@@ -325,7 +325,6 @@ export default function NationalDirectorDashboard() {
 
     try {
       await addDirector(created, newUser)
-      setDirectors(prev => [created, ...prev])
       setCreatedCredentialsNotice({
         name: created.name,
         email: created.email,
