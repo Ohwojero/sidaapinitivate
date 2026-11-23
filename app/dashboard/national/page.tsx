@@ -1035,7 +1035,7 @@ export default function NationalDirectorDashboard() {
               <thead className="bg-stone-50 text-stone-500 font-mono uppercase text-[10px] border-b border-stone-200">
                 <tr>
                   <th className="py-3 px-4">Director</th>
-                  <th className="py-3 px-4">Assigned State &amp; LGA</th>
+                  <th className="py-3 px-4">Assigned State</th>
                   <th className="py-3 px-4">Contact Details</th>
                   <th className="py-3 px-4 text-center">Staff Count</th>
                   <th className="py-3 px-4 text-center">Status</th>
@@ -1071,7 +1071,6 @@ export default function NationalDirectorDashboard() {
                     </td>
                     <td className="py-4 px-4">
                       <div className="font-bold text-emerald-900">{d.state} State</div>
-                      <div className="text-[11px] text-stone-500">{d.lga} &bull; {d.city}</div>
                     </td>
                     <td className="py-4 px-4 font-mono text-[11px]">
                       <div>{d.email}</div>
