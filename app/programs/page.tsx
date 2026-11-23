@@ -209,7 +209,7 @@ export default function ProgramsPage() {
                       <img
                         src={item.mainImage}
                         alt={item.title}
-                        className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        className="h-full w-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
                       <div className="flex h-full flex-col items-center justify-center gap-2 text-white/60">
@@ -345,7 +345,7 @@ export default function ProgramsPage() {
                           <img
                             src={activePhoto}
                             alt={selectedProgram.title}
-                            className="h-full w-full object-cover"
+                            className="h-full w-full object-cover object-top"
                           />
                         ) : (
                           <div className="flex h-full flex-col items-center justify-center gap-3 text-white/60">
@@ -367,7 +367,7 @@ export default function ProgramsPage() {
                                   : 'border-transparent opacity-60 hover:opacity-100'
                               }`}
                             >
-                              <img src={photo} alt="" className="h-full w-full object-cover" />
+                              <img src={photo} alt="" className="h-full w-full object-cover object-top" />
                             </button>
                           ))}
                         </div>
